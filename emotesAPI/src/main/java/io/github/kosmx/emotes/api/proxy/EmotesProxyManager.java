@@ -1,5 +1,7 @@
 package io.github.kosmx.emotes.api.proxy;
 
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -53,14 +55,14 @@ public abstract class EmotesProxyManager {
 
     /**
      * Network instance has received a message, it will send it to EmoteX to execute
-     * You can invoke it via {@link INetworkInstance#receiveMessage(ByteBuffer, UUID)}
+     * You can invoke it via {@link INetworkInstance#receiveMessage(CustomPacketPayload, UUID)}
      *
-     * @param buffer received buffer
+     * @param payload received payload
      * @param player player who plays the emote, Can be NULL but only
      * @param networkInstance the network instance to send back information or to store other version
      */
-    static void receiveMessage(ByteBuffer buffer, UUID player, INetworkInstance networkInstance){
-        getManager().dispatchReceive(buffer, player, networkInstance);
+    static void receiveMessage(CustomPacketPayload payload, UUID player, INetworkInstance networkInstance){
+        getManager().dispatchReceive(payload, player, networkInstance);
     }
 
     /**
@@ -98,7 +100,7 @@ public abstract class EmotesProxyManager {
 
     protected abstract void logMSG(Level level, String msg);
 
-    protected abstract void dispatchReceive(ByteBuffer buffer, UUID player, INetworkInstance networkInstance);
+    protected abstract void dispatchReceive(CustomPacketPayload payload, UUID player, INetworkInstance networkInstance);
 
     public abstract void onDisconnectFromServer(INetworkInstance networkInstance);
 }

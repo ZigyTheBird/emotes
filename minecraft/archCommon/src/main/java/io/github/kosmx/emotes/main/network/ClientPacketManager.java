@@ -3,10 +3,9 @@ package io.github.kosmx.emotes.main.network;
 import io.github.kosmx.emotes.PlatformTools;
 import io.github.kosmx.emotes.api.proxy.EmotesProxyManager;
 import io.github.kosmx.emotes.api.proxy.INetworkInstance;
-import io.github.kosmx.emotes.common.network.EmotePacket;
-import io.github.kosmx.emotes.common.network.objects.NetData;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.main.EmoteHolder;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -36,17 +35,17 @@ public final class ClientPacketManager extends EmotesProxyManager {
         return false;
     }
 
-    static void send(EmotePacket.Builder packetBuilder, UUID target){
+    static void send(CustomPacketPayload payload, UUID target){
         if(!defaultNetwork.isActive() || useAlwaysAlt()){
             for(INetworkInstance network:networkInstances){
                 if(network.isActive()){
                     if (target == null || !network.isServerTrackingPlayState()) {
                         try {
-                            EmotePacket.Builder builder = packetBuilder.copy();
+                            /*EmotePacket.Builder builder = packetBuilder.copy(); TODO
                             if (!network.sendPlayerID()) builder.removePlayerID();
                             builder.setSizeLimit(network.maxDataSize());
-                            builder.setVersion(network.getRemoteVersions());
-                            network.sendMessage(builder, target);    //everything is happening on the heap, there won't be any memory leak
+                            builder.setVersion(network.getRemoteVersions());*/
+                            network.sendMessage(payload, target);    //everything is happening on the heap, there won't be any memory leak
                         } catch(IOException exception) {
                             EmoteInstance.instance.getLogger().log(Level.WARNING, "Error while sending packet: " + exception.getMessage(), true);
                             if (EmoteInstance.config.showDebug.get()) {
@@ -58,11 +57,11 @@ public final class ClientPacketManager extends EmotesProxyManager {
             }
         }
         if(defaultNetwork.isActive() && (target == null || !defaultNetwork.isServerTrackingPlayState())){
-            if(!defaultNetwork.sendPlayerID())packetBuilder.removePlayerID();
+            //if(!defaultNetwork.sendPlayerID())packetBuilder.removePlayerID();
             try {
-                packetBuilder.setSizeLimit(defaultNetwork.maxDataSize());
-                packetBuilder.setVersion(defaultNetwork.getRemoteVersions());
-                defaultNetwork.sendMessage(packetBuilder, target);
+                //packetBuilder.setSizeLimit(defaultNetwork.maxDataSize());
+                //packetBuilder.setVersion(defaultNetwork.getRemoteVersions());
+                defaultNetwork.sendMessage(payload, target);
             }
             catch (IOException exception){
                 EmoteInstance.instance.getLogger().log(Level.WARNING, "Error while sending packet: " + exception.getMessage(), true);
@@ -73,13 +72,12 @@ public final class ClientPacketManager extends EmotesProxyManager {
         }
     }
 
-    static void receiveMessage(ByteBuffer buffer, UUID player, INetworkInstance networkInstance){
+    static void receiveMessage(CustomPacketPayload payload, UUID player, INetworkInstance networkInstance){
         try{
-            NetData data = new EmotePacket.Builder().setThreshold(EmoteInstance.config.validThreshold.get()).build().read(buffer);
-            if(data == null){
+            if(payload == null){
                 throw new IOException("no valid data");
             }
-            if(!networkInstance.trustReceivedPlayer()){
+            /*if(!networkInstance.trustReceivedPlayer()){ TODO
                 data.player = null;
             }
             if(player != null) {
@@ -88,10 +86,10 @@ public final class ClientPacketManager extends EmotesProxyManager {
             if(data.player == null && data.purpose.playerBound){
                 //this is not exactly IO but something went wrong in IO so it is IO fail
                 throw new IOException("Didn't received any player information");
-            }
+            }*/
 
             try {
-                ClientEmotePlay.executeMessage(data, networkInstance);
+                ClientEmotePlay.executeMessage(payload, networkInstance);
             }
             catch (Exception e){//I don't want to break the whole game with a bad message but I'll warn with the highest level
                 EmoteInstance.instance.getLogger().log(Level.SEVERE, "Critical error has occurred while receiving emote: " + e.getMessage(), true);
@@ -114,8 +112,8 @@ public final class ClientPacketManager extends EmotesProxyManager {
     }
 
     @Override
-    protected void dispatchReceive(ByteBuffer buffer, UUID player, INetworkInstance networkInstance) {
-        receiveMessage(buffer, player, networkInstance);
+    protected void dispatchReceive(CustomPacketPayload payload, UUID player, INetworkInstance networkInstance) {
+        receiveMessage(payload, player, networkInstance);
     }
 
     public static boolean isRemoteAvailable(){

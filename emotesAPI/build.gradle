@@ -1,17 +1,13 @@
 plugins {
     id 'java'
     id 'maven-publish'
-    id 'signing' //why not if I can?
+    id 'net.neoforged.moddev' version '1.0.11'
 }
 
 version = rootProject.mod_version
 
-//sourceCompatibility = JavaVersion.VERSION_1_8
-//targetCompatibility = JavaVersion.VERSION_1_8
-
-
-configurations {
-    dev
+neoForge {
+    neoFormVersion = "1.21.1-20240808.144430"
 }
 
 dependencies {
@@ -20,43 +16,16 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
 }
+
 test {
     useJUnitPlatform()
 }
 
-compileJava {
-    options.release.set 21 //Build on JDK 1.8
-}
-
-artifacts {
-    dev(jar)
-}
-
 //-------- publishing --------
 
-java{
+java {
     withSourcesJar()
     withJavadocJar()
-}
-
-ext["signing.keyId"] = ''
-ext["signing.password"] = ''
-ext["signing.secretKeyRingFile"] = ''
-
-File secretPropsFile = project.rootProject.file('keys.properties')
-if (secretPropsFile.exists()) {
-    Properties p = new Properties()
-    new FileInputStream(secretPropsFile).withCloseable { is ->
-        p.load(is)
-    }
-    p.each { name, value ->
-        ext[name] = value
-    }
-}
-signing {
-    if (secretPropsFile.exists()) {
-        sign publishing.publications
-    }
 }
 
 publishing {

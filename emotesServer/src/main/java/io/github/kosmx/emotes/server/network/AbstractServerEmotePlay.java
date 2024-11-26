@@ -9,22 +9,22 @@ import dev.kosmx.playerAnim.core.util.UUIDMap;
 import io.github.kosmx.emotes.api.events.server.ServerEmoteAPI;
 import io.github.kosmx.emotes.api.events.server.ServerEmoteEvents;
 import io.github.kosmx.emotes.api.proxy.INetworkInstance;
-import io.github.kosmx.emotes.common.network.EmotePacket;
 import io.github.kosmx.emotes.common.network.GeyserEmotePacket;
-import io.github.kosmx.emotes.common.network.PacketTask;
-import io.github.kosmx.emotes.common.network.objects.NetData;
+import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
+import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
+import io.github.kosmx.emotes.common.network.payloads.EmoteStopPayload;
 import io.github.kosmx.emotes.common.tools.BiMap;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.server.config.Serializer;
 import io.github.kosmx.emotes.server.geyser.EmoteMappings;
 import io.github.kosmx.emotes.server.serializer.UniversalEmoteSerializer;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -88,24 +88,19 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
         return getPlayerNetworkInstance(this.getPlayerFromUUID(player));
     }
 
-    public void receiveMessage(byte[] bytes, P player, INetworkInstance instance) throws IOException{
-        receiveMessage(new EmotePacket.Builder().setThreshold(EmoteInstance.config.validThreshold.get()).build().read(ByteBuffer.wrap(bytes)), player, instance);
-    }
-
-    public void receiveMessage(NetData data, P player, INetworkInstance instance) throws IOException {
+    public void receiveMessage(CustomPacketPayload data, P player, INetworkInstance instance) throws IOException {
         EmoteInstance.instance.getLogger().log(Level.FINEST, "[emotes server] Received data from: " + getUUIDFromPlayer(player) + " data: " + data);
-        switch (data.purpose){
-            case STOP:
-                stopEmote(player, data);
+        switch (data){
+            case EmoteStopPayload stopData:
+                stopEmote(player, stopData);
                 break;
-            case CONFIG:
-                instance.setVersions(data.versions);
+            case DiscoveryPayload discoveryPayload:
+                instance.setVersions(discoveryPayload.cloneVersions());
                 instance.presenceResponse();
                 break;
-            case STREAM:
-                handleStreamEmote(data, player, instance);
+            case EmotePlayPayload playPayload:
+                handleStreamEmote(playPayload, player, instance);
                 break;
-            case UNKNOWN:
             default:
                 throw new IOException("Unknown packet task");
         }
@@ -119,10 +114,7 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
     public void receiveBEEmote(P player, GeyserEmotePacket emotePacket) throws IOException {
         UUID javaEmote = bedrockEmoteMap.getJavaEmote(emotePacket.getEmoteID());
         if(javaEmote != null && UniversalEmoteSerializer.getEmote(javaEmote) != null){
-            NetData data = new NetData();
-            data.emoteData = UniversalEmoteSerializer.getEmote(javaEmote);
-            data.purpose = PacketTask.STREAM;
-            handleStreamEmote(data, player, null);
+            handleStreamEmote(new EmotePlayPayload(UniversalEmoteSerializer.getEmote(javaEmote)), player, null);
         }
         else sendForEveryoneElse(emotePacket, player);
     }
@@ -134,17 +126,17 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
      * @param instance senders network handler
      * @throws IOException probably not
      */
-    protected void handleStreamEmote(NetData data, P player, INetworkInstance instance) throws IOException {
-        if (!data.valid && doValidate()) {
-            EventResult result = ServerEmoteEvents.EMOTE_VERIFICATION.invoker().verify(data.emoteData, getUUIDFromPlayer(player));
+    protected void handleStreamEmote(EmotePlayPayload data, P player, INetworkInstance instance) throws IOException {
+        if (!data.valid() && doValidate()) {
+            EventResult result = ServerEmoteEvents.EMOTE_VERIFICATION.invoker().verify(data.emoteData(), getUUIDFromPlayer(player));
             if (result != EventResult.FAIL) {
-                EmotePacket.Builder stopMSG = new EmotePacket.Builder().configureToSendStop(data.emoteData.getUuid()).configureTarget(getUUIDFromPlayer(player)).setSizeLimit(0x100000);
-                if(instance != null)instance.sendMessage(stopMSG, null);
+                if(instance != null)
+                    instance.sendMessage(new EmoteStopPayload(data.emoteData().getUuid(), getUUIDFromPlayer(player)), null);
                 return;
             }
         }
         IServerNetworkInstance playerInstance = getPlayerNetworkInstance(player);
-        if (data.player != null && playerInstance.trackPlayState()) {
+        if (data.player() != null && playerInstance.trackPlayState()) {
             EmoteInstance.instance.getLogger().log(Level.WARNING, "Player: " + player + " does not respect server-side emote tracking. Ignoring repeat", true);
             return;
         }
@@ -159,12 +151,11 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
      * @param data   data
      * @param player source player
      */
-    protected void streamEmote(NetData data, P player, boolean isForced, boolean isFromPlayer) {
-        getPlayerNetworkInstance(player).getEmoteTracker().setPlayedEmote(data.emoteData, isForced);
-        ServerEmoteEvents.EMOTE_PLAY.invoker().onEmotePlay(data.emoteData, getUUIDFromPlayer(player));
-        data.isForced = isForced;
-        data.player = getUUIDFromPlayer(player);
-        UUID bedrockEmoteID = bedrockEmoteMap.getBeEmote(data.emoteData.getUuid());
+    protected void streamEmote(EmotePlayPayload data, P player, boolean isForced, boolean isFromPlayer) {
+        getPlayerNetworkInstance(player).getEmoteTracker().setPlayedEmote(data.emoteData(), isForced);
+        ServerEmoteEvents.EMOTE_PLAY.invoker().onEmotePlay(data.emoteData(), getUUIDFromPlayer(player));
+        data = new EmotePlayPayload(data.emoteData(), data.tick(), getUUIDFromPlayer(player), isForced);
+        UUID bedrockEmoteID = bedrockEmoteMap.getBeEmote(data.emoteData().getUuid());
         GeyserEmotePacket geyserEmotePacket = null;
         if(bedrockEmoteID != null){
             geyserEmotePacket = new GeyserEmotePacket();
@@ -177,16 +168,16 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
         }
     }
 
-    protected void stopEmote(P player, @Nullable NetData originalMessage) {
+    protected void stopEmote(P player, EmoteStopPayload originalMessage) {
         Pair<KeyframeAnimation, Integer> emote = getPlayerNetworkInstance(player).getEmoteTracker().getPlayedEmote();
         getPlayerNetworkInstance(player).getEmoteTracker().setPlayedEmote(null, false);
         if (emote != null) {
             ServerEmoteEvents.EMOTE_STOP_BY_USER.invoker().onStopEmote(emote.getLeft().getUuid(), getUUIDFromPlayer(player));
-            NetData data = new EmotePacket.Builder().configureToSendStop(emote.getLeft().getUuid(), getUUIDFromPlayer(player)).build().data;
+            EmoteStopPayload data = new EmoteStopPayload(emote.getLeft().getUuid(), getUUIDFromPlayer(player), originalMessage == null);
 
             sendForEveryoneElse(data, null, player);
             if (originalMessage == null) { //If the stop is not from the player, server needs to notify the player too
-                data.isForced = true;
+                //data.isForced = true;
                 sendForPlayer(data, player, getUUIDFromPlayer(player));
             }
         }
@@ -213,14 +204,14 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
         if (tracked == null || tracker == null) return;
         Pair<KeyframeAnimation, Integer> playedEmote = getPlayerNetworkInstance(tracked).getEmoteTracker().getPlayedEmote();
         if (playedEmote != null) {
-            sendForPlayer(new EmotePacket.Builder().configureToStreamEmote(playedEmote.getLeft()).configureEmoteTick(playedEmote.getRight()).configureTarget(getUUIDFromPlayer(tracked)).build().data, tracked, getUUIDFromPlayer(tracker));
+            sendForPlayer(new EmotePlayPayload(playedEmote.getLeft(), playedEmote.getRight(), getUUIDFromPlayer(tracked)), tracked, getUUIDFromPlayer(tracker));
         }
     }
 
     @Override
     protected void setPlayerPlayingEmoteImpl(UUID player, @Nullable KeyframeAnimation emoteData, boolean isForced) {
         if (emoteData != null) {
-            streamEmote(new EmotePacket.Builder().configureToStreamEmote(emoteData).build().data, getPlayerFromUUID(player), isForced, false);
+            streamEmote(new EmotePlayPayload(emoteData), getPlayerFromUUID(player), isForced, false);
         } else {
             stopEmote(getPlayerFromUUID(player), null);
         }
@@ -236,32 +227,6 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
         return getPlayerNetworkInstance(player).getEmoteTracker().isForced();
     }
 
-    public List<ByteBuffer> getServerEmotes(HashMap<Byte, Byte> compatibilityMap) {
-        try {
-
-            return UniversalEmoteSerializer.serverEmotes.values().stream().map(emote -> {
-                try {
-                    return new EmotePacket.Builder().configureToSaveEmote(emote).setVersion(compatibilityMap).setSizeLimit(0x100000).build().write(); //1 MB
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }).toList();
-
-
-        } catch (RuntimeException e) {
-            EmoteInstance.instance.getLogger().log(Level.WARNING, e.getMessage(), e);
-            return null;
-        }
-    }
-
-    public EmotePacket.Builder getS2CConfigPacket(boolean trackPlayState) {
-        NetData configData = new EmotePacket.Builder().configureToConfigExchange(true).build().data;
-        if (trackPlayState) {
-            configData.versions.put((byte)0x80, (byte)0x01);
-        }
-        return new EmotePacket.Builder(configData);
-    }
-
     /**
      * Send message to everyone, except for the player. Only geyser packet
      * @param packet Geyser packet
@@ -275,7 +240,7 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
      * @param emotePacket GeyserMC emote packet for Geyser users ;D
      * @param player send around this player
      */
-    protected abstract void sendForEveryoneElse(NetData data, @Nullable GeyserEmotePacket emotePacket, P player);
+    protected abstract void sendForEveryoneElse(CustomPacketPayload data, @Nullable GeyserEmotePacket emotePacket, P player);
 
     /**
      * Send message to target. If target see player the message will be sent
@@ -283,7 +248,7 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
      * @param player around player
      * @param target target player
      */
-    protected abstract void sendForPlayerInRange(NetData data, P player, UUID target);
+    protected abstract void sendForPlayerInRange(CustomPacketPayload data, P player, UUID target);
 
     /**
      * Send a message to target. This will send a message even if target doesn't see player
@@ -291,7 +256,7 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
      * @param player player for the ServerWorld information
      * @param target target entity
      */
-    protected abstract void sendForPlayer(NetData data, P player, UUID target);
+    protected abstract void sendForPlayer(CustomPacketPayload data, P player, UUID target);
 
     /**
      * This is **NOT** for API usage,

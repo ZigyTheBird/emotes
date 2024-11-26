@@ -1,6 +1,5 @@
 package io.github.kosmx.emotes.arch.network.client.fabric;
 
-import io.github.kosmx.emotes.arch.network.EmotePacketPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;

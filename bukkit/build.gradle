@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    //id "com.github.johnrengelman.shadow" version "6.1.0"
+    id "io.papermc.paperweight.userdev" version "1.7.5"
     id 'maven-publish'
     id "com.modrinth.minotaur"
 }
@@ -34,8 +34,8 @@ configurations {
 }
 
 dependencies {
-    implementation "org.spigotmc:spigot-api:${rootProject.spigot_version}"
     implementation "com.comphenix.protocol:ProtocolLib:${rootProject.protocollib_version}"
+    paperweight.paperDevBundle("${rootProject.minecraft_version}-R0.1-SNAPSHOT")
 
     compileModule(project(':emotesAPI')) { transitive = false }
     compileModule(project(':executor')) { transitive = false }

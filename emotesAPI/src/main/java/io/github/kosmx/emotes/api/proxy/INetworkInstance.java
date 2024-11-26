@@ -1,6 +1,6 @@
 package io.github.kosmx.emotes.api.proxy;
 
-import io.github.kosmx.emotes.common.network.EmotePacket;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -9,7 +9,6 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 /**
  * To hold information about network
@@ -19,8 +18,6 @@ import java.util.function.Consumer;
  * use this interface if you want to do something completely different
  */
 public interface INetworkInstance {
-
-
     /**
      * Get the version from the other side. null if default
      * the map doesn't have to contain information about every module. these will be added automatically.
@@ -41,11 +38,8 @@ public interface INetworkInstance {
     /**
      * Invoked after receiving the presence packet
      * {@link INetworkInstance#setVersions(HashMap)}
-     * Used to send server-side config/emotes
-     *
-     * @deprecated communication changes
+     * Used to send server-side configuration/emotes
      */
-    @Deprecated
     default void presenceResponse(){}
 
     /**
@@ -57,48 +51,24 @@ public interface INetworkInstance {
     }
 
     /**
-     * Does this server allow emote streams from client. This can allow larger/longer emotes but can be abused
-     * @return
-     */
-    default boolean allowEmoteStreamC2S() {
-        return false;
-    }
-
-    /**
      * The Proxy controller ask you to send the message,
      * only if {@link #isActive()} is true
-     * @param builder packet builder
+     * @param payload packet payload
      * @param target target to send message, if null, everyone in the view distance
      *               on server-side target will be ignored
      * @throws IOException when message write to bytes has failed
      */
-    void sendMessage(EmotePacket.Builder builder, @Nullable UUID target) throws IOException;
+    void sendMessage(CustomPacketPayload payload, @Nullable UUID target) throws IOException;
 
     /**
      * Network instance has received a message, it will send it to EmoteX core to execute
      * you can set your receive event to invoke this
      * there are it's other forms in {@link AbstractNetworkInstance}
-     * @param byteBuffer received buffer
+     * @param payload received payload
      * @param player player who plays the emote, Can be NULL but only if {@link #trustReceivedPlayer()} is true or message is not play or stop
      */
-    default void receiveMessage(ByteBuffer byteBuffer, UUID player) {
-        EmotesProxyManager.receiveMessage(byteBuffer, player, this);
-    }
-
-    /**
-     * You are asked to send your config.
-     * From 2.2 in the MC configuration phase, the server will initialize config, the client will reply.
-     * <p>
-     * @deprecated ambiguous name, use {@link #sendC2SConfig(Consumer)}
-     */
-    @Deprecated
-    default void sendConfigCallback() {}
-
-    /**
-     * Client is sending config message to server. Vanilla clients will answer to the server configuration phase message.
-     * This might get invoked multiple times on the same network instance.
-     */
-    default void sendC2SConfig(Consumer<EmotePacket.Builder> consumer) {
+    default void receiveMessage(CustomPacketPayload payload, UUID player) {
+        EmotesProxyManager.receiveMessage(payload, player, this);
     }
 
     /**
@@ -112,7 +82,7 @@ public interface INetworkInstance {
 
     /**
      * If emote validation happens (or can happen at server side)
-     * if you return false, Emotecraft will ALWAYS validate the received emote according to the use config.
+     * if you return false, Emotecraft will ALWAYS validate the received emote according to the use configuration.
      * @return is the received is validated at server-side
      */
     default boolean safeProxy(){
@@ -126,12 +96,6 @@ public interface INetworkInstance {
      * @return is this channel working
      */
     boolean isActive();
-
-    /**
-     * Get the remote system's version number
-     * @return remote version number. 8-255
-     */
-    int getRemoteVersion();
 
     /**
      * Does the track the emote play state of every player -> true

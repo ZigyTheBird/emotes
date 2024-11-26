@@ -7,9 +7,9 @@ import dev.kosmx.playerAnim.core.data.KeyframeAnimation;
 import dev.kosmx.playerAnim.core.util.MathHelper;
 import dev.kosmx.playerAnim.core.util.UUIDMap;
 import dev.kosmx.playerAnim.core.util.Vec3d;
-import io.github.kosmx.emotes.PlatformTools;
 import io.github.kosmx.emotes.api.proxy.AbstractNetworkInstance;
 import io.github.kosmx.emotes.api.proxy.INetworkInstance;
+import io.github.kosmx.emotes.common.CommonData;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.executor.emotePlayer.IEmotePlayer;
 import io.github.kosmx.emotes.executor.emotePlayer.IEmotePlayerEntity;
@@ -64,9 +64,9 @@ public class EmoteHolder implements Supplier<UUID> {
      */
     public EmoteHolder(KeyframeAnimation emote) {
         this.emote = emote;
-        this.name = PlatformTools.fromJson(emote.extraData.get("name"));
-        this.description = PlatformTools.fromJson(emote.extraData.get("description"));
-        this.author = PlatformTools.fromJson(emote.extraData.get("author"));
+        this.name = CommonData.fromJson(emote.extraData.get("name"));
+        this.description = CommonData.fromJson(emote.extraData.get("description"));
+        this.author = CommonData.fromJson(emote.extraData.get("author"));
     }
 
 
@@ -126,7 +126,7 @@ public class EmoteHolder implements Supplier<UUID> {
         try {
 
             DynamicTexture nativeImageBackedTexture = new DynamicTexture(NativeImage.read(inputStream));
-            this.iconIdentifier = PlatformTools.newIdentifier("icon" + this.hashCode());
+            this.iconIdentifier = CommonData.newIdentifier("icon" + this.hashCode());
             Minecraft.getInstance().getTextureManager().register(this.iconIdentifier, nativeImageBackedTexture);
             this.nativeIcon = nativeImageBackedTexture;
 

@@ -1,12 +1,13 @@
 plugins {
     id 'java'
     id 'maven-publish'
+    id 'net.neoforged.moddev' version '1.0.11'
 }
 
 version = rootProject.mod_version
 
-repositories {
-    mavenCentral()
+neoForge {
+    neoFormVersion = "1.21.1-20240808.144430"
 }
 
 configurations {

@@ -1,12 +1,11 @@
 package io.github.kosmx.emotes.arch.network;
 
 import io.github.kosmx.emotes.arch.mixin.ServerCommonPacketListenerAccessor;
-import io.github.kosmx.emotes.common.network.EmotePacket;
-import io.github.kosmx.emotes.common.network.PacketConfig;
 import io.github.kosmx.emotes.server.network.EmotePlayTracker;
 import io.github.kosmx.emotes.server.network.IServerNetworkInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,15 +32,8 @@ public class ModdedServerPlayNetwork extends AbstractServerNetwork implements IS
 
     @Override
     protected @NotNull EmotesMixinConnection getServerConnection() {
-        return (EmotesMixinConnection) ((ServerCommonPacketListenerAccessor)serverGamePacketListener).getConnection();
+        return (EmotesMixinConnection) ((ServerCommonPacketListenerAccessor) serverGamePacketListener).getConnection();
     }
-
-
-    @Override
-    void sendEmotePacket(ByteBuffer buffer) {
-        sendPlayMessage(buffer);
-    }
-
 
     @Override
     public void sendGeyserPacket(ByteBuffer buffer) {
@@ -54,25 +46,8 @@ public class ModdedServerPlayNetwork extends AbstractServerNetwork implements IS
     }
 
     @Override
-    void sendStreamPacket(ByteBuffer buffer) {
-        serverGamePacketListener.send(NetworkPlatformTools.streamPacket(buffer));
-    }
-
-    @Override
-    public void sendMessage(EmotePacket.Builder builder, @Nullable UUID target) throws IOException {
-        sendPlayMessage(builder.setVersion(getRemoteVersions()).build().write());
-    }
-
-    public void sendPlayMessage(ByteBuffer bytes) {
-        serverGamePacketListener.send(NetworkPlatformTools.playPacket(bytes));
-    }
-
-    public void sendPlayStream(ByteBuffer bytes) {
-        if (getRemoteVersions().getOrDefault(PacketConfig.ALLOW_EMOTE_STREAM, (byte)1) != 0) {
-            streamHelper.sendMessage(bytes);
-        } else {
-            sendPlayMessage(bytes);
-        }
+    public void sendMessage(CustomPacketPayload payload, @Nullable UUID target) throws IOException {
+        serverGamePacketListener.send(new ClientboundCustomPayloadPacket(payload));
     }
 
     // TODO isActive

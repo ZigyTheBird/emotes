@@ -1,6 +1,5 @@
 package io.github.kosmx.emotes.fabric.network;
 
-import io.github.kosmx.emotes.arch.network.EmotePacketPayload;
 import io.github.kosmx.emotes.arch.network.NetworkPlatformTools;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 

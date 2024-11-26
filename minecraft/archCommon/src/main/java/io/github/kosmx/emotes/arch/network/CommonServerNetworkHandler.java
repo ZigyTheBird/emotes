@@ -1,12 +1,12 @@
 package io.github.kosmx.emotes.arch.network;
 
 import io.github.kosmx.emotes.arch.mixin.ServerChunkCacheAccessor;
-import io.github.kosmx.emotes.common.network.EmotePacket;
 import io.github.kosmx.emotes.common.network.GeyserEmotePacket;
-import io.github.kosmx.emotes.common.network.objects.NetData;
+import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.server.network.AbstractServerEmotePlay;
 import io.github.kosmx.emotes.server.network.IServerNetworkInstance;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
@@ -31,10 +31,10 @@ public final class CommonServerNetworkHandler extends AbstractServerEmotePlay<Pl
     public void init() {
     }
 
-    public void receiveMessage(byte[] bytes, Player player) {
+    public void receiveMessage(CustomPacketPayload payload, Player player) {
         if (player instanceof ServerPlayer serverPlayer) {
             try {
-                receiveMessage(bytes, player, getHandler(serverPlayer.connection));
+                receiveMessage(payload, player, getHandler(serverPlayer.connection));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -43,28 +43,6 @@ public final class CommonServerNetworkHandler extends AbstractServerEmotePlay<Pl
 
     public static IServerNetworkInstance getHandler(ServerGamePacketListenerImpl handler) {
         return ((EmotesMixinNetwork)handler).emotecraft$getServerNetworkInstance();
-    }
-
-    public void receiveStreamMessage(byte[] bytes, Player player) {
-        if (player instanceof ServerPlayer serverPlayer) {
-            receiveStreamMessage(serverPlayer, getHandler(serverPlayer.connection), ByteBuffer.wrap(bytes));
-        }
-    }
-
-    public void receiveStreamMessage(ServerPlayer player, IServerNetworkInstance handler, ByteBuffer buf) {
-        try
-        {
-            if (((EmotesMixinNetwork)handler).emotecraft$getServerNetworkInstance().allowEmoteStreamC2S()) {
-                var packet = ((AbstractServerNetwork)handler).receiveStreamChunk(buf);
-                if (packet != null) {
-                    receiveMessage(packet.array(), player, handler);
-                }
-            } else {
-                handler.disconnect("Emote stream is disabled on this server");
-            }
-        } catch (IOException e) {
-            EmoteInstance.instance.getLogger().log(Level.WARNING, e.getMessage(), e);
-        }
     }
 
     @Override
@@ -97,13 +75,13 @@ public final class CommonServerNetworkHandler extends AbstractServerEmotePlay<Pl
     }
 
     @Override
-    protected void sendForEveryoneElse(@Nullable NetData data, @Nullable GeyserEmotePacket geyserPacket, Player player) {
+    protected void sendForEveryoneElse(CustomPacketPayload payload, @Nullable GeyserEmotePacket geyserPacket, Player player) {
         getTrackedPlayers(player).forEach(target -> {
             if (target != player) {
                 try {
-                    if (data != null && NetworkPlatformTools.canSendPlay(target, NetworkPlatformTools.EMOTE_CHANNEL_ID.id())) {
+                    if (payload != null && NetworkPlatformTools.canSendPlay(target, EmotePlayPayload.TYPE.id())) {
                         IServerNetworkInstance playerNetwork = getPlayerNetworkInstance(target);
-                        playerNetwork.sendMessage(new EmotePacket.Builder(data), null);
+                        playerNetwork.sendMessage(payload, null);
                     } else if (geyserPacket != null && NetworkPlatformTools.canSendPlay(target, NetworkPlatformTools.GEYSER_CHANNEL_ID.id())) {
                         IServerNetworkInstance playerNetwork = getPlayerNetworkInstance(target);
                         playerNetwork.sendGeyserPacket(ByteBuffer.wrap(geyserPacket.write()));
@@ -116,7 +94,7 @@ public final class CommonServerNetworkHandler extends AbstractServerEmotePlay<Pl
     }
 
     @Override
-    protected void sendForPlayerInRange(NetData data, Player player, UUID target) {
+    protected void sendForPlayerInRange(CustomPacketPayload payload, Player player, UUID target) {
         if (!(player instanceof ServerPlayer sourcePlayer)) {
             return;
         }
@@ -124,7 +102,7 @@ public final class CommonServerNetworkHandler extends AbstractServerEmotePlay<Pl
         try {
             var targetPlayer = sourcePlayer.server.getPlayerList().getPlayer(target);
             if (targetPlayer != null && targetPlayer.getChunkTrackingView().contains(sourcePlayer.chunkPosition())) {
-                getPlayerNetworkInstance(targetPlayer).sendMessage(new EmotePacket.Builder(data), null);
+                getPlayerNetworkInstance(targetPlayer).sendMessage(payload, null);
             }
 
         } catch (IOException e) {
@@ -133,13 +111,12 @@ public final class CommonServerNetworkHandler extends AbstractServerEmotePlay<Pl
     }
 
     @Override
-    protected void sendForPlayer(NetData data, Player ignore, UUID target) {
+    protected void sendForPlayer(CustomPacketPayload payload, Player ignore, UUID target) {
         try {
             Player player = getPlayerFromUUID(target);
             IServerNetworkInstance playerNetwork = getPlayerNetworkInstance(player);
 
-            EmotePacket.Builder packetBuilder = new EmotePacket.Builder(data);
-            playerNetwork.sendMessage(packetBuilder, null);
+            playerNetwork.sendMessage(payload, null);
         } catch (IOException e) {
             EmoteInstance.instance.getLogger().log(Level.WARNING, e.getMessage(), e);
         }

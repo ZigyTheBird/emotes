@@ -7,14 +7,17 @@ import io.github.kosmx.emotes.PlatformTools;
 import io.github.kosmx.emotes.api.events.client.ClientEmoteAPI;
 import io.github.kosmx.emotes.api.events.client.ClientEmoteEvents;
 import io.github.kosmx.emotes.api.proxy.INetworkInstance;
-import io.github.kosmx.emotes.common.network.EmotePacket;
-import io.github.kosmx.emotes.common.network.objects.NetData;
+import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
+import io.github.kosmx.emotes.common.network.payloads.EmoteFilePayload;
+import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
+import io.github.kosmx.emotes.common.network.payloads.EmoteStopPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.executor.emotePlayer.IEmotePlayerEntity;
 import io.github.kosmx.emotes.inline.TmpGetters;
 import io.github.kosmx.emotes.main.EmoteHolder;
 import io.github.kosmx.emotes.main.config.ClientConfig;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -43,18 +46,14 @@ public class ClientEmotePlay extends ClientEmoteAPI {
             return false;
         }
 
-        EmotePacket.Builder packetBuilder = new EmotePacket.Builder();
-        packetBuilder.configureToStreamEmote(emote, player.emotes_getUUID());
-        ClientPacketManager.send(packetBuilder, null);
+        ClientPacketManager.send(new EmotePlayPayload(emote, player.emotes_getUUID()), null);
         ClientEmoteEvents.EMOTE_PLAY.invoker().onEmotePlay(emote, player.emotes_getUUID());
         TmpGetters.getClientMethods().getMainPlayer().emotecraft$playEmote(emote, 0, false);
         return true;
     }
 
     public static void clientRepeatLocalEmote(KeyframeAnimation emote, int tick, UUID target){
-        EmotePacket.Builder packetBuilder = new EmotePacket.Builder();
-        packetBuilder.configureToStreamEmote(emote, TmpGetters.getClientMethods().getMainPlayer().emotes_getUUID()).configureEmoteTick(tick);
-        ClientPacketManager.send(packetBuilder, target);
+        ClientPacketManager.send(new EmotePlayPayload(emote, tick, TmpGetters.getClientMethods().getMainPlayer().emotes_getUUID()), target);
     }
 
     public static boolean clientStopLocalEmote() {
@@ -71,9 +70,7 @@ public class ClientEmotePlay extends ClientEmoteAPI {
 
     public static boolean clientStopLocalEmote(KeyframeAnimation emoteData) {
         if (emoteData != null && !TmpGetters.getClientMethods().getMainPlayer().emotecraft$isForcedEmote()) {
-            EmotePacket.Builder packetBuilder = new EmotePacket.Builder();
-            packetBuilder.configureToSendStop(emoteData.getUuid(), TmpGetters.getClientMethods().getMainPlayer().emotes_getUUID());
-            ClientPacketManager.send(packetBuilder, null);
+            ClientPacketManager.send(new EmoteStopPayload(emoteData.getUuid(), TmpGetters.getClientMethods().getMainPlayer().emotes_getUUID()), null);
             TmpGetters.getClientMethods().getMainPlayer().stopEmote();
 
             ClientEmoteEvents.LOCAL_EMOTE_STOP.invoker().onEmoteStop();
@@ -82,41 +79,41 @@ public class ClientEmotePlay extends ClientEmoteAPI {
         return false;
     }
 
-    static void executeMessage(NetData data, INetworkInstance networkInstance) throws NullPointerException {
-        EmoteInstance.instance.getLogger().log(Level.FINEST, "[emotes client] Received message: " + data);
+    static void executeMessage(CustomPacketPayload payload, INetworkInstance networkInstance) throws NullPointerException {
+        EmoteInstance.instance.getLogger().log(Level.FINEST, "[emotes client] Received message: " + payload);
 
-        if (data.purpose == null) {
-            if (EmoteInstance.config.showDebug.get()) {
+        /*if (data.purpose == null) {
+            if (EmoteInstance.configuration.showDebug.get()) {
                 EmoteInstance.instance.getLogger().log(Level.INFO, "Packet execution is not possible without a purpose");
             }
-        }
-        switch (Objects.requireNonNull(data.purpose)) {
-            case STREAM:
-                assert data.emoteData != null;
-                if(data.valid || !(((ClientConfig)EmoteInstance.config).alwaysValidate.get() || !networkInstance.safeProxy())) {
-                    receivePlayPacket(data.emoteData, data.player, data.tick, data.isForced);
+        }*/
+        switch (Objects.requireNonNull(payload)) {
+            case EmotePlayPayload play:
+                assert play.emoteData() != null;
+                if(play.valid() || !(((ClientConfig)EmoteInstance.config).alwaysValidate.get() || !networkInstance.safeProxy())) {
+                    receivePlayPacket(play.emoteData(), play.player(), play.tick(), play.isForced());
                 }
                 break;
-            case STOP:
-                IEmotePlayerEntity player = PlatformTools.getPlayerFromUUID(data.player);
-                assert data.stopEmoteID != null;
+            case EmoteStopPayload stop:
+                IEmotePlayerEntity player = stop.playerId().map(PlatformTools::getPlayerFromUUID).orElse(null);
+                assert stop.stopEmoteID() != null;
                 if(player != null) {
-                    ClientEmoteEvents.EMOTE_STOP.invoker().onEmoteStop(data.stopEmoteID, player.emotes_getUUID());
-                    player.stopEmote(data.stopEmoteID);
-                    if(player.isMainPlayer() && !data.isForced){
+                    ClientEmoteEvents.EMOTE_STOP.invoker().onEmoteStop(stop.stopEmoteID(), player.emotes_getUUID());
+                    player.stopEmote(stop.stopEmoteID());
+                    if(player.isMainPlayer() && !stop.isForced()){
                         TmpGetters.getClientMethods().sendChatMessage(Component.translatable("emotecraft.blockedEmote"));
                     }
                 }
                 else {
-                    queue.remove(data.player);
+                    queue.remove(stop.player());
                 }
                 break;
-            case CONFIG:
-                networkInstance.setVersions(Objects.requireNonNull(data.versions));
+            case DiscoveryPayload discovery:
+                networkInstance.setVersions(discovery.cloneVersions());
                 break;
-            case FILE:
-                EmoteHolder.addEmoteToList(data.emoteData).fromInstance = networkInstance;
-            case UNKNOWN:
+            case EmoteFilePayload file:
+                EmoteHolder.addEmoteToList(file.emoteData()).fromInstance = networkInstance;
+            default:
                 if (EmoteInstance.config.showDebug.get()) {
                     EmoteInstance.instance.getLogger().log(Level.INFO, "Packet execution is not possible unknown purpose");
                 }

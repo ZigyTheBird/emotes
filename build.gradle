@@ -15,6 +15,7 @@ allprojects {
     group = rootProject.maven_group
 
     repositories {
+        mavenCentral()
         maven{
             name = "TerraformersMC maven"
             url = 'https://maven.terraformersmc.com/'
