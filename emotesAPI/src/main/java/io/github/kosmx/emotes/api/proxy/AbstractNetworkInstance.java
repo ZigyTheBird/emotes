@@ -1,12 +1,10 @@
 package io.github.kosmx.emotes.api.proxy;
 
-import io.github.kosmx.emotes.common.network.PacketConfig;
 import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -15,13 +13,7 @@ import java.util.function.Consumer;
  * This has most of the functions implemented as you might want, but you can override any.
  */
 public abstract class AbstractNetworkInstance implements INetworkInstance{
-
-    //Notable version parameters
-    protected int remoteVersion = 0;
-    protected boolean disableNBS = false;
-    protected boolean doesServerTrackEmotePlay = false;
-
-    protected int animationFormat = 1;
+    protected DiscoveryPayload discoveryPayload;
 
     /*
      * You have to implement at least one of these three functions
@@ -74,22 +66,11 @@ public abstract class AbstractNetworkInstance implements INetworkInstance{
     /**
      * Default client-side version configuration,
      * Please call super if you override it.
-     * @param map version/configuration map
+     * @param payload version/configuration map
      */
     @Override
-    public void setVersions(HashMap<Byte, Byte> map) {
-        if (map.containsKey((byte) 3)) {
-            disableNBS = map.get((byte) 3) == 0;
-        }
-        if (map.containsKey((byte) 8)) {
-            remoteVersion = map.get((byte) 8); //8x8 :D
-        }
-        if (map.containsKey(PacketConfig.SERVER_TRACK_EMOTE_PLAY)) {
-            this.doesServerTrackEmotePlay = map.get(PacketConfig.SERVER_TRACK_EMOTE_PLAY) != 0;
-        }
-        if (map.containsKey((byte) 0)) {
-            animationFormat = map.get((byte) 0);
-        }
+    public void setVersions(DiscoveryPayload payload) {
+        this.discoveryPayload = payload;
     }
 
     /**
@@ -97,26 +78,18 @@ public abstract class AbstractNetworkInstance implements INetworkInstance{
      * it is just a default implementation
      */
     @Override
-    public HashMap<Byte, Byte> getRemoteVersions() {
-        HashMap<Byte, Byte> map = new HashMap<>();
-        if(disableNBS){
-            map.put(PacketConfig.NBS_CONFIG, (byte) 0);
-        }
-        if (doesServerTrackEmotePlay) {
-            map.put(PacketConfig.SERVER_TRACK_EMOTE_PLAY, (byte)1);
-        }
-        map.put(PacketConfig.ANIMATION_FORMAT, (byte)this.animationFormat);
-        return map;
+    public DiscoveryPayload getRemoteVersions() {
+        return this.discoveryPayload;
     }
 
     @Override
     public boolean isServerTrackingPlayState() {
-        return this.doesServerTrackEmotePlay;
+        return this.discoveryPayload.doesServerTrackEmotePlay();
     }
 
     @Override
-    public void sendC2SConfig(Consumer<CustomPacketPayload> consumer) { // TODO
-        consumer.accept(new DiscoveryPayload(getRemoteVersions()));
+    public void sendC2SConfig(Consumer<CustomPacketPayload> consumer) {
+        consumer.accept(this.discoveryPayload);
     }
 
     @Override

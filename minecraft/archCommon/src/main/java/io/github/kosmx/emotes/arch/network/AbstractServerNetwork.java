@@ -1,21 +1,20 @@
 package io.github.kosmx.emotes.arch.network;
 
 import io.github.kosmx.emotes.api.proxy.INetworkInstance;
+import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.HashMap;
 
 public abstract class AbstractServerNetwork implements INetworkInstance {
     @NotNull
     protected abstract EmotesMixinConnection getServerConnection();
 
     @Override
-    public HashMap<Byte, Byte> getRemoteVersions() {
+    public DiscoveryPayload getRemoteVersions() {
         return getServerConnection().emotecraft$getRemoteVersions();
     }
 
     @Override
-    public void setVersions(HashMap<Byte, Byte> map) {
+    public void setVersions(DiscoveryPayload map) {
         getServerConnection().emotecraft$setVersions(map);
     }
 

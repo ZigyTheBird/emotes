@@ -1,12 +1,12 @@
 package io.github.kosmx.emotes.api.proxy;
 
+import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import javax.annotation.Nullable;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -26,14 +26,13 @@ public interface INetworkInstance {
      *
      * @return maybe null
      */
-    @SuppressWarnings("deprecated")
-    HashMap<Byte, Byte> getRemoteVersions();
+    DiscoveryPayload getRemoteVersions();
 
     /**
      * Receive (and save) versions from the other side
-     * @param map map
+     * @param payload versions
      */
-    void setVersions(HashMap<Byte, Byte> map);
+    void setVersions(DiscoveryPayload payload);
 
     /**
      * Do send the sender's id to the server

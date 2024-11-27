@@ -31,7 +31,7 @@ public final class ServerNetworkStuff {
 
         ServerConfigurationNetworking.registerGlobalReceiver(DiscoveryPayload.TYPE, (message, context) -> {
             Connection connection = ((ServerCommonPacketListenerAccessor) context.networkHandler()).getConnection();
-            ((EmotesMixinConnection) connection).emotecraft$setVersions(message.cloneVersions());
+            ((EmotesMixinConnection) connection).emotecraft$setVersions(message);
             // TODO send emotes
             context.networkHandler().completeTask(ConfigTask.TYPE); // And, we're done here
         });

@@ -1,31 +1,23 @@
 package io.github.kosmx.emotes.arch.mixin;
 
 import io.github.kosmx.emotes.arch.network.EmotesMixinConnection;
+import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import net.minecraft.network.Connection;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
-import java.util.HashMap;
-
 @Mixin(Connection.class)
 public class ConnectionHandlerMixin implements EmotesMixinConnection {
-
     @Unique
-    @NotNull
-    private final HashMap<Byte, Byte> versions = new HashMap<>();
+    private DiscoveryPayload emotecraft$versions;
 
     @Override
-    public @NotNull HashMap<Byte, Byte> emotecraft$getRemoteVersions() {
-        return versions;
+    public DiscoveryPayload emotecraft$getRemoteVersions() {
+        return this.emotecraft$versions;
     }
 
     @Override
-    public void emotecraft$setVersions(@Nullable HashMap<Byte, Byte> map) {
-        versions.clear();
-        if (map != null) {
-            versions.putAll(map);
-        }
+    public void emotecraft$setVersions(DiscoveryPayload payload) {
+        this.emotecraft$versions = payload;
     }
 }

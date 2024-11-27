@@ -104,7 +104,7 @@ public class ClientEmotePlay extends ClientEmoteAPI {
                 }
                 break;
             case DiscoveryPayload discovery:
-                networkInstance.setVersions(discovery.cloneVersions());
+                networkInstance.setVersions(discovery);
                 break;
             case EmoteFilePayload file:
                 EmoteHolder.addEmoteToList(file.emoteData()).fromInstance = networkInstance;

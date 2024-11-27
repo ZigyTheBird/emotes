@@ -9,11 +9,9 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import org.bukkit.entity.Player;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
 import java.util.UUID;
 
 public class BukkitNetworkInstance extends AbstractNetworkInstance implements IServerNetworkInstance {
-    private HashMap<Byte, Byte> version = null;
     final Player player;
 
     private final EmotePlayTracker emotePlayTracker = new EmotePlayTracker();
@@ -25,16 +23,6 @@ public class BukkitNetworkInstance extends AbstractNetworkInstance implements IS
 
     public BukkitNetworkInstance(Player player){
         this.player = player;
-    }
-
-    @Override
-    public HashMap<Byte, Byte> getRemoteVersions() {
-        return version;
-    }
-
-    @Override
-    public void setVersions(HashMap<Byte, Byte> map) {
-        this.version = map;
     }
 
     @Override

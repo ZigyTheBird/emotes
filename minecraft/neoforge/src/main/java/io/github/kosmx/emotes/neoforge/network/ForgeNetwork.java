@@ -30,7 +30,7 @@ public class ForgeNetwork {
                             ClientNetwork.INSTANCE.sendC2SConfig(context::reply);
                         },
                         (message, context) -> {
-                            ((EmotesMixinConnection) context.connection()).emotecraft$setVersions(message.cloneVersions());
+                            ((EmotesMixinConnection) context.connection()).emotecraft$setVersions(message);
                             // TODO send emotes
                             context.finishCurrentTask(ConfigTask.TYPE); // And, we're done here
                         }
