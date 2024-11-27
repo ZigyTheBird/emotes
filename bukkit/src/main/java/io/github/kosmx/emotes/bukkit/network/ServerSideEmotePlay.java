@@ -5,6 +5,7 @@ import io.github.kosmx.emotes.common.network.GeyserEmotePacket;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.server.network.AbstractServerEmotePlay;
 import io.github.kosmx.emotes.server.network.IServerNetworkInstance;
+import io.papermc.paper.event.player.PlayerTrackEntityEvent;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
@@ -122,6 +123,13 @@ public class ServerSideEmotePlay extends AbstractServerEmotePlay<Player> impleme
             if (pose == Pose.SNEAKING || pose == Pose.DYING || pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SLEEPING) {
                 playerEntersInvalidPose((Player) event.getEntity());
             }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerTrackEntity(PlayerTrackEntityEvent event) {
+        if (event.getEntity() instanceof Player player) {
+            playerStartTracking(player, event.getPlayer());
         }
     }
 }

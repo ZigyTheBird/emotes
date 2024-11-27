@@ -1,12 +1,5 @@
 package io.github.kosmx.emotes.bukkit;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.utility.MinecraftVersion;
 import com.mojang.brigadier.CommandDispatcher;
 import io.github.kosmx.emotes.bukkit.executor.BukkitInstance;
 import io.github.kosmx.emotes.bukkit.network.BukkitNetworkInstance;
@@ -23,7 +16,6 @@ import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.server.ServerCommands;
 import io.github.kosmx.emotes.server.config.Serializer;
-import io.github.kosmx.emotes.server.network.AbstractServerEmotePlay;
 import io.github.kosmx.emotes.server.serializer.UniversalEmoteSerializer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -42,13 +34,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.logging.Level;
 
 public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
     private final Map<ResourceLocation, StreamCodec<ByteBuf, ? extends CustomPacketPayload>> payloads = new HashMap<>();
     private ServerSideEmotePlay networkPlay = null;
-    private ProtocolManager protocolManager;
 
     @Override
     public void onLoad() {
@@ -63,8 +53,6 @@ public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
         Serializer.INSTANCE = new Serializer(); //it does register itself
         EmoteInstance.config = Serializer.getConfig();
         UniversalEmoteSerializer.loadEmotes();
-        protocolManager = ProtocolLibrary.getProtocolManager();
-        registerProtocolListener();
 
         this.payloads.put(DiscoveryPayload.TYPE.id(), DiscoveryPayload.STREAM_CODEC);
         this.payloads.put(EmotePlayPayload.TYPE.id(), EmotePlayPayload.STREAM_CODEC);
@@ -106,29 +94,6 @@ public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
             getServer().getMessenger().unregisterOutgoingPluginChannel(this, id.toString());
             getServer().getMessenger().unregisterIncomingPluginChannel(this, id.toString());
         }
-    }
-
-    public void registerProtocolListener() {
-        PacketType packetType = MinecraftVersion.CONFIG_PHASE_PROTOCOL_UPDATE.atOrAbove() ?
-                PacketType.Play.Server.SPAWN_ENTITY : PacketType.Play.Server.NAMED_ENTITY_SPAWN;
-
-        protocolManager.addPacketListener(new PacketAdapter(this, ListenerPriority.NORMAL, packetType) {
-            @Override
-            public void onPacketSending(PacketEvent packetEvent) {
-                if (packetEvent.getPacketType().equals(packetType)) {
-                    //Field trackedField = packetEvent.getPacket().getStructures().getField(2);
-                    UUID tracked = packetEvent.getPacket().getUUIDs().readSafely(0);
-
-                    AbstractServerEmotePlay.getInstance().playerStartTracking(BukkitWrapper.this.networkPlay.getPlayerFromUUID(tracked), packetEvent.getPlayer());
-
-                }
-            }
-
-            @Override
-            public void onPacketReceiving(PacketEvent packetEvent) {
-
-            }
-        });
     }
 
     @Override

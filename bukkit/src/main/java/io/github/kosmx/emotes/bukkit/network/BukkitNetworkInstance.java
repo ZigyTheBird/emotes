@@ -47,14 +47,4 @@ public class BukkitNetworkInstance extends AbstractNetworkInstance implements IS
     public boolean isActive() {
         return true;
     }
-
-    /* @Override
-    public void presenceResponse() { TODO
-        IServerNetworkInstance.super.presenceResponse();
-        for (Player player :bukkitPlugin.getServer().getOnlinePlayers()) {
-            if (this.player.canSee(player)) {
-                ServerSideEmotePlay.getInstance().playerStartTracking(player, this.player);
-            }
-        }
-    }*/
 }

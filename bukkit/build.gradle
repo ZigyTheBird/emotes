@@ -35,7 +35,6 @@ configurations {
 }
 
 dependencies {
-    implementation "com.comphenix.protocol:ProtocolLib:${rootProject.protocollib_version}"
     paperweight.paperDevBundle("${rootProject.minecraft_version}-R0.1-SNAPSHOT")
 
     compileModule(project(':emotesAPI')) { transitive = false }
@@ -51,9 +50,6 @@ dependencies {
 tasks {
     runServer {
         minecraftVersion rootProject.minecraft_version
-        downloadPlugins {
-            url("https://github.com/dmulloy2/ProtocolLib/releases/download/${rootProject.protocollib_version}/ProtocolLib.jar")
-        }
     }
 }
 
