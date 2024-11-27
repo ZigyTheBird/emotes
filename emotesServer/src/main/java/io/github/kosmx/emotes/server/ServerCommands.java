@@ -1,4 +1,4 @@
-package io.github.kosmx.emotes.arch;
+package io.github.kosmx.emotes.server;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -38,8 +38,11 @@ import static net.minecraft.commands.Commands.*;
  * status?
  */
 public final class ServerCommands {
-
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registryAccess, Commands.CommandSelection environment) {
+        register(dispatcher, environment == CommandSelection.DEDICATED);
+    }
+
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher, boolean isDedicated) {
         dispatcher.register(literal("emotes")
                 .then(literal("play")
                         .then(argument("emote", StringArgumentType.string()).suggests(new EmoteArgumentProvider())
@@ -94,7 +97,7 @@ public final class ServerCommands {
                                 })
                         )
                 )
-                .then(literal("reload").requires(ctx -> ctx.hasPermission(4) && environment == CommandSelection.DEDICATED).executes(
+                .then(literal("reload").requires(ctx -> ctx.hasPermission(4) && isDedicated).executes(
                         context -> {
                             UniversalEmoteSerializer.loadEmotes(); //Reload server-side emotes
                             return 0;

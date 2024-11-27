@@ -19,6 +19,7 @@ import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteStopPayload;
 import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
+import io.github.kosmx.emotes.server.ServerCommands;
 import io.github.kosmx.emotes.server.config.Serializer;
 import io.github.kosmx.emotes.server.network.AbstractServerEmotePlay;
 import io.github.kosmx.emotes.server.serializer.UniversalEmoteSerializer;
@@ -67,6 +68,10 @@ public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
         this.payloads.put(EmoteFilePayload.TYPE.id(), EmoteFilePayload.STREAM_CODEC);
         this.payloads.put(StreamPayload.TYPE.id(), StreamPayload.STREAM_CODEC);
         this.payloads.put(GeyserEmotePacket.TYPE.id(), GeyserEmotePacket.STREAM_CODEC);
+
+        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event ->
+                ServerCommands.register((CommandDispatcher) event.registrar().getDispatcher(), true)
+        );
     }
 
     @Override

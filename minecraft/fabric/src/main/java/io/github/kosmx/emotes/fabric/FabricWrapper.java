@@ -1,6 +1,6 @@
 package io.github.kosmx.emotes.fabric;
 
-import io.github.kosmx.emotes.arch.ServerCommands;
+import io.github.kosmx.emotes.server.ServerCommands;
 import io.github.kosmx.emotes.common.CommonData;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.fabric.executor.FabricEmotesMain;
