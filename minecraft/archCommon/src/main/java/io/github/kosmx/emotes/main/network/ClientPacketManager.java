@@ -3,6 +3,7 @@ package io.github.kosmx.emotes.main.network;
 import io.github.kosmx.emotes.PlatformTools;
 import io.github.kosmx.emotes.api.proxy.EmotesProxyManager;
 import io.github.kosmx.emotes.api.proxy.INetworkInstance;
+import io.github.kosmx.emotes.common.network.payloads.type.HasPlayerPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.main.EmoteHolder;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -39,20 +40,23 @@ public final class ClientPacketManager extends EmotesProxyManager {
             for(INetworkInstance network:networkInstances){
                 if(network.isActive()){
                     if (target == null || !network.isServerTrackingPlayState()) {
-                        /*EmotePacket.Builder builder = packetBuilder.copy(); TODO
-                        if (!network.sendPlayerID()) builder.removePlayerID();
-                        builder.setSizeLimit(network.maxDataSize());
-                        builder.setVersion(network.getRemoteVersions());*/
-                        network.sendMessage(payload, target);    //everything is happening on the heap, there won't be any memory leak
+                        if (!defaultNetwork.sendPlayerID() && payload instanceof HasPlayerPayload<?> playerPayload) {
+                            defaultNetwork.sendMessage(playerPayload.removePlayerID(), target);
+
+                        } else {
+                            defaultNetwork.sendMessage(payload, target);
+                        }
                     }
                 }
             }
         }
         if(defaultNetwork.isActive() && (target == null || !defaultNetwork.isServerTrackingPlayState())){
-            //if(!defaultNetwork.sendPlayerID())packetBuilder.removePlayerID();
-            //packetBuilder.setSizeLimit(defaultNetwork.maxDataSize());
-            //packetBuilder.setVersion(defaultNetwork.getRemoteVersions());
-            defaultNetwork.sendMessage(payload, target);
+            if (!defaultNetwork.sendPlayerID() && payload instanceof HasPlayerPayload<?> playerPayload) {
+                defaultNetwork.sendMessage(playerPayload.removePlayerID(), target);
+
+            } else {
+                defaultNetwork.sendMessage(payload, target);
+            }
         }
     }
 

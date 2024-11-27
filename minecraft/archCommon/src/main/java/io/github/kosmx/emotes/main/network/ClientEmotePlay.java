@@ -82,11 +82,6 @@ public class ClientEmotePlay extends ClientEmoteAPI {
     static void executeMessage(CustomPacketPayload payload, INetworkInstance networkInstance) throws NullPointerException {
         EmoteInstance.instance.getLogger().log(Level.FINEST, "[emotes client] Received message: " + payload);
 
-        /*if (data.purpose == null) {
-            if (EmoteInstance.configuration.showDebug.get()) {
-                EmoteInstance.instance.getLogger().log(Level.INFO, "Packet execution is not possible without a purpose");
-            }
-        }*/
         switch (Objects.requireNonNull(payload)) {
             case EmotePlayPayload play:
                 assert play.emoteData() != null;

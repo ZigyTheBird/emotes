@@ -2,6 +2,7 @@ package io.github.kosmx.emotes.common.network.payloads;
 
 import dev.kosmx.playerAnim.core.data.KeyframeAnimation;
 import io.github.kosmx.emotes.common.CommonData;
+import io.github.kosmx.emotes.common.network.payloads.type.HasPlayerPayload;
 import io.github.kosmx.emotes.common.network.utils.KeyframeAnimationUtils;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.UUIDUtil;
@@ -22,7 +23,7 @@ import java.util.UUID;
  * @param tick A tick to start with
  * @param playerId Player who plays the animation (empty if sent from the client)
  */
-public record EmotePlayPayload(KeyframeAnimation emoteData, int tick, Optional<UUID> playerId, boolean isForced) implements CustomPacketPayload {
+public record EmotePlayPayload(KeyframeAnimation emoteData, int tick, Optional<UUID> playerId, boolean isForced) implements CustomPacketPayload, HasPlayerPayload<EmotePlayPayload> {
     public static final CustomPacketPayload.Type<EmotePlayPayload> TYPE =
             new CustomPacketPayload.Type<>(CommonData.newIdentifier("play"));
 
@@ -66,5 +67,10 @@ public record EmotePlayPayload(KeyframeAnimation emoteData, int tick, Optional<U
 
     public boolean valid() {
         return true; // TODO
+    }
+
+    @Override
+    public EmotePlayPayload removePlayerID() {
+        return new EmotePlayPayload(emoteData(), tick(), Optional.empty(), isForced());
     }
 }

@@ -1,6 +1,7 @@
 package io.github.kosmx.emotes.common.network.payloads;
 
 import io.github.kosmx.emotes.common.CommonData;
+import io.github.kosmx.emotes.common.network.payloads.type.HasPlayerPayload;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -19,7 +20,7 @@ import java.util.UUID;
  * @param stopEmoteID Uuid of animation to stop
  * @param playerId Player at whom the animation should stop (empty if sent from the client)
  */
-public record EmoteStopPayload(UUID stopEmoteID, Optional<UUID> playerId, boolean isForced) implements CustomPacketPayload {
+public record EmoteStopPayload(UUID stopEmoteID, Optional<UUID> playerId, boolean isForced) implements CustomPacketPayload, HasPlayerPayload<EmoteStopPayload> {
     public static final CustomPacketPayload.Type<EmoteStopPayload> TYPE =
             new CustomPacketPayload.Type<>(CommonData.newIdentifier("stop"));
 
@@ -50,5 +51,10 @@ public record EmoteStopPayload(UUID stopEmoteID, Optional<UUID> playerId, boolea
 
     public @Nullable UUID player() {
         return playerId().orElse(null);
+    }
+
+    @Override
+    public EmoteStopPayload removePlayerID() {
+        return new EmoteStopPayload(stopEmoteID(), Optional.empty(), isForced());
     }
 }

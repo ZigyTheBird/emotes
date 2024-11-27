@@ -14,6 +14,11 @@ public class FabricIsBestYouAreRightKosmX {
         PayloadTypeRegistry.configurationS2C().register(DiscoveryPayload.TYPE, DiscoveryPayload.STREAM_CODEC);
         PayloadTypeRegistry.configurationC2S().register(DiscoveryPayload.TYPE, DiscoveryPayload.STREAM_CODEC);
 
+        // Config (legacy)
+        PayloadTypeRegistry.playS2C().register(EmoteFilePayload.TYPE, EmoteFilePayload.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(DiscoveryPayload.TYPE, DiscoveryPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(DiscoveryPayload.TYPE, DiscoveryPayload.STREAM_CODEC);
+
         // Player
         PayloadTypeRegistry.playS2C().register(EmotePlayPayload.TYPE, EmotePlayPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(EmotePlayPayload.TYPE, EmotePlayPayload.STREAM_CODEC);

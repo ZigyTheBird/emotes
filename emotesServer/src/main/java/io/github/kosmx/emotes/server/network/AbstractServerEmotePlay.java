@@ -94,10 +94,9 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
             case EmoteStopPayload stopData:
                 stopEmote(player, stopData);
                 break;
-            /*case DiscoveryPayload discoveryPayload: TODO
+            case DiscoveryPayload discoveryPayload:
                 instance.setVersions(discoveryPayload.cloneVersions());
-                instance.presenceResponse();
-                break;*/
+                break;
             case EmotePlayPayload playPayload:
                 handleStreamEmote(playPayload, player, instance);
                 break;
