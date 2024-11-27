@@ -33,7 +33,7 @@ public class EmoteStreamHelper implements AutoCloseable {
     protected final int maxPacketSize;
 
     public EmoteStreamHelper(int maxPacketSize) {
-        this.maxPacketSize = maxPacketSize;
+        this.maxPacketSize = maxPacketSize - (maxPacketSize / 4);
         if (this.maxPacketSize <= 0) {
             throw new IllegalArgumentException();
         }
@@ -61,7 +61,7 @@ public class EmoteStreamHelper implements AutoCloseable {
             payloadConsumer.accept(new StreamPayload(payload.type().id(), targetArray, byteBuf.readableBytes() == 0));
         }
 
-        return byteBuf.readableBytes() == 0;
+        return true;
     }
 
     /**
