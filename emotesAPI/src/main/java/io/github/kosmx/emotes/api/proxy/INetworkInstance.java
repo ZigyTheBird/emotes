@@ -35,14 +35,6 @@ public interface INetworkInstance {
     void setVersions(DiscoveryPayload payload);
 
     /**
-     * Do send the sender's id to the server
-     * @return true means send
-     */
-    default boolean sendPlayerID(){
-        return false;
-    }
-
-    /**
      * The Proxy controller ask you to send the message,
      * only if {@link #isActive()} is true
      * @param payload packet payload

@@ -13,7 +13,7 @@ import java.util.function.Consumer;
  * This has most of the functions implemented as you might want, but you can override any.
  */
 public abstract class AbstractNetworkInstance implements INetworkInstance{
-    protected DiscoveryPayload discoveryPayload;
+    protected DiscoveryPayload discoveryPayload = DiscoveryPayload.DEFAULT;
 
     /*
      * You have to implement at least one of these three functions
@@ -89,7 +89,7 @@ public abstract class AbstractNetworkInstance implements INetworkInstance{
 
     @Override
     public void sendC2SConfig(Consumer<CustomPacketPayload> consumer) {
-        consumer.accept(this.discoveryPayload);
+        consumer.accept(this.discoveryPayload); // TODO override settings
     }
 
     @Override

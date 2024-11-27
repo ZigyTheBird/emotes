@@ -10,7 +10,6 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -58,10 +57,11 @@ public record EmotePlayPayload(KeyframeAnimation emoteData, int tick, Optional<U
 
     @Override
     public String toString() {
-        return String.format("EmotePlayPayload{emoteData=%s, startingAt=%s, player=%s, isForced=%s}", emoteData(), tick(), player(), isForced());
+        return String.format("EmotePlayPayload{emoteData=%s, startingAt=%s, player=%s, isForced=%s}", emoteData(), tick(), getPlayerID(), isForced());
     }
 
-    public @Nullable UUID player() {
+    @Override
+    public UUID getPlayerID() {
         return playerId().orElse(null);
     }
 
@@ -72,5 +72,10 @@ public record EmotePlayPayload(KeyframeAnimation emoteData, int tick, Optional<U
     @Override
     public EmotePlayPayload removePlayerID() {
         return new EmotePlayPayload(emoteData(), tick(), Optional.empty(), isForced());
+    }
+
+    @Override
+    public EmotePlayPayload setPlayerID(UUID player) {
+        return new EmotePlayPayload(emoteData(), tick(), player, isForced());
     }
 }

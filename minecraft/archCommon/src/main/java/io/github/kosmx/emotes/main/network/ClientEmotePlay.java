@@ -86,7 +86,7 @@ public class ClientEmotePlay extends ClientEmoteAPI {
             case EmotePlayPayload play:
                 assert play.emoteData() != null;
                 if(play.valid() || !(((ClientConfig)EmoteInstance.config).alwaysValidate.get() || !networkInstance.safeProxy())) {
-                    receivePlayPacket(play.emoteData(), play.player(), play.tick(), play.isForced());
+                    receivePlayPacket(play.emoteData(), play.getPlayerID(), play.tick(), play.isForced());
                 }
                 break;
             case EmoteStopPayload stop:
@@ -100,7 +100,7 @@ public class ClientEmotePlay extends ClientEmoteAPI {
                     }
                 }
                 else {
-                    queue.remove(stop.player());
+                    queue.remove(stop.getPlayerID());
                 }
                 break;
             case DiscoveryPayload discovery:

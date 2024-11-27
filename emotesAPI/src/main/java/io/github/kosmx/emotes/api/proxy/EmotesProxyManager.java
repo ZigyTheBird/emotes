@@ -2,7 +2,6 @@ package io.github.kosmx.emotes.api.proxy;
 
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.logging.Level;

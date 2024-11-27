@@ -134,7 +134,7 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
             }
         }
         IServerNetworkInstance playerInstance = getPlayerNetworkInstance(player);
-        if (data.player() != null && playerInstance.trackPlayState()) {
+        if (data.getPlayerID() != null && playerInstance.trackPlayState()) {
             EmoteInstance.instance.getLogger().log(Level.WARNING, "Player: " + player + " does not respect server-side emote tracking. Ignoring repeat", true);
             return;
         }

@@ -16,10 +16,12 @@ public class ConfigTask implements ConfigurationTask {
     public void start(@NotNull Consumer<Packet<?>> consumer) {
         consumer.accept(new ClientboundCustomPayloadPacket(new DiscoveryPayload(
                 AnimationBinary.getCurrentVersion(), // Animator version
+                false, // send player uuid?
                 true,  // track player state
-                true, // Songs enabled
-                true, // Allow emote stream
-                true // Aloow emote sync
+
+                false, // disable NBS?
+                true, // Allow emote stream?
+                true // Aloow emote sync?
         )));
     }
 

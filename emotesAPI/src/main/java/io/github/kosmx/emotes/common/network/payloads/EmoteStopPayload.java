@@ -8,7 +8,6 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -46,15 +45,21 @@ public record EmoteStopPayload(UUID stopEmoteID, Optional<UUID> playerId, boolea
 
     @Override
     public String toString() {
-        return String.format("EmoteStopPayload{stopEmoteID=%s, player=%s, isForced=%s}", stopEmoteID(), player(), isForced());
+        return String.format("EmoteStopPayload{stopEmoteID=%s, player=%s, isForced=%s}", stopEmoteID(), getPlayerID(), isForced());
     }
 
-    public @Nullable UUID player() {
+    @Override
+    public UUID getPlayerID() {
         return playerId().orElse(null);
     }
 
     @Override
     public EmoteStopPayload removePlayerID() {
         return new EmoteStopPayload(stopEmoteID(), Optional.empty(), isForced());
+    }
+
+    @Override
+    public EmoteStopPayload setPlayerID(UUID player) {
+        return new EmoteStopPayload(stopEmoteID(), player, isForced());
     }
 }

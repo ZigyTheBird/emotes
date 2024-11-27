@@ -3,6 +3,7 @@ package io.github.kosmx.emotes.main.network;
 import io.github.kosmx.emotes.PlatformTools;
 import io.github.kosmx.emotes.api.proxy.EmotesProxyManager;
 import io.github.kosmx.emotes.api.proxy.INetworkInstance;
+import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import io.github.kosmx.emotes.common.network.payloads.type.HasPlayerPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.main.EmoteHolder;
@@ -40,7 +41,7 @@ public final class ClientPacketManager extends EmotesProxyManager {
             for(INetworkInstance network:networkInstances){
                 if(network.isActive()){
                     if (target == null || !network.isServerTrackingPlayState()) {
-                        if (!defaultNetwork.sendPlayerID() && payload instanceof HasPlayerPayload<?> playerPayload) {
+                        if (!defaultNetwork.getRemoteVersions().sendPlayerID() && payload instanceof HasPlayerPayload<?> playerPayload) {
                             defaultNetwork.sendMessage(playerPayload.removePlayerID(), target);
 
                         } else {
@@ -51,7 +52,7 @@ public final class ClientPacketManager extends EmotesProxyManager {
             }
         }
         if(defaultNetwork.isActive() && (target == null || !defaultNetwork.isServerTrackingPlayState())){
-            if (!defaultNetwork.sendPlayerID() && payload instanceof HasPlayerPayload<?> playerPayload) {
+            if (!defaultNetwork.getRemoteVersions().sendPlayerID() && payload instanceof HasPlayerPayload<?> playerPayload) {
                 defaultNetwork.sendMessage(playerPayload.removePlayerID(), target);
 
             } else {
@@ -65,16 +66,16 @@ public final class ClientPacketManager extends EmotesProxyManager {
             if(payload == null){
                 throw new IOException("no valid data");
             }
-            /*if(!networkInstance.trustReceivedPlayer()){ TODO
-                data.player = null;
+            if(payload instanceof HasPlayerPayload<?> hasPlayerPayload && !networkInstance.trustReceivedPlayer()){
+                payload = hasPlayerPayload.removePlayerID();
             }
-            if(player != null) {
-                data.player = player;
+            if(payload instanceof HasPlayerPayload<?> hasPlayerPayload && player != null) {
+                payload = hasPlayerPayload.setPlayerID(player);
             }
-            if(data.player == null && data.purpose.playerBound){
+            if(payload instanceof HasPlayerPayload<?> hasPlayerPayload && hasPlayerPayload.getPlayerID() == null){
                 //this is not exactly IO but something went wrong in IO so it is IO fail
                 throw new IOException("Didn't received any player information");
-            }*/
+            }
 
             try {
                 ClientEmotePlay.executeMessage(payload, networkInstance);
@@ -130,5 +131,6 @@ public final class ClientPacketManager extends EmotesProxyManager {
     public void onDisconnectFromServer(INetworkInstance networkInstance){
         if(networkInstance == null)throw new NullPointerException("network instance must be non-null");
         EmoteHolder.list.removeIf(emoteHolder -> emoteHolder.fromInstance == networkInstance);
+        networkInstance.setVersions(DiscoveryPayload.DEFAULT);
     }
 }
