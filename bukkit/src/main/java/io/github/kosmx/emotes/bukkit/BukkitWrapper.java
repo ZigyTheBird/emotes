@@ -94,7 +94,7 @@ public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
         }
 
         getServer().getPluginManager().registerEvents(networkPlay, this);
-        getServer().getPluginManager().registerEvents(new ConfigurationSimulator(), this);
+        getServer().getPluginManager().registerEvents(new ConfigurationSimulator(this.payloadsToServer.keySet()), this);
 
         getLogger().info("Loading Emotecraft as a bukkit plugin...");
     }

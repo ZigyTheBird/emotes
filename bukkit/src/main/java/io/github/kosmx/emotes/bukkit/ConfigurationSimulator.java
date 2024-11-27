@@ -4,7 +4,11 @@ import io.github.kosmx.emotes.bukkit.utils.BukkitUnwrapper;
 import io.github.kosmx.emotes.common.network.configuration.ConfigTask;
 import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
+import io.netty.buffer.Unpooled;
 import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.network.protocol.common.custom.DiscardedPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ConfigurationTask;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
@@ -13,10 +17,14 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLinksSendEvent;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +51,12 @@ public class ConfigurationSimulator implements Listener {
 
     public static final Map<Player, ServerConfigurationPacketListenerImpl> CONFIGURATION_MAP = new HashMap<>();
 
+    private final Set<ResourceLocation> channels;
+
+    public ConfigurationSimulator(Set<ResourceLocation> channels) {
+        this.channels = channels;
+    }
+
     @EventHandler
     @SuppressWarnings("unchecked")
     public void onPlayerLinksSend(PlayerLinksSendEvent event) {
@@ -54,6 +68,9 @@ public class ConfigurationSimulator implements Listener {
 
         ServerPlayer serverPlayer = BukkitUnwrapper.getNormalPlayer(event.getPlayer());
         ServerConfigurationPacketListenerImpl configurationListener = getConfigurationListener(serverPlayer);
+        if (channels.isEmpty()) {
+            sendSupportedChannels(configurationListener, this.channels); // To fix neoforge
+        }
 
         Queue<ConfigurationTask> configurationTasks = (Queue<ConfigurationTask>)
                 CONFIGURATION_TASKS.get(configurationListener);
@@ -84,5 +101,24 @@ public class ConfigurationSimulator implements Listener {
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void sendSupportedChannels(ServerConfigurationPacketListenerImpl configurationListener, Collection<ResourceLocation> channels) {
+        if (channels.isEmpty()) {
+            return;
+        }
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        for (ResourceLocation channel : channels) {
+            try {
+                stream.write(channel.toString().getBytes(StandardCharsets.UTF_8));
+                stream.write((byte) 0);
+            } catch (IOException ignored) {
+            }
+        }
+
+        configurationListener.send(new ClientboundCustomPayloadPacket(new DiscardedPayload(
+                ResourceLocation.withDefaultNamespace("register"), Unpooled.wrappedBuffer(stream.toByteArray())
+        )));
     }
 }
