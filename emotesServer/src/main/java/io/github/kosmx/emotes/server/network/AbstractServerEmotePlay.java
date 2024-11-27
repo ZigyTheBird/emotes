@@ -94,10 +94,10 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
             case EmoteStopPayload stopData:
                 stopEmote(player, stopData);
                 break;
-            case DiscoveryPayload discoveryPayload:
+            /*case DiscoveryPayload discoveryPayload: TODO
                 instance.setVersions(discoveryPayload.cloneVersions());
                 instance.presenceResponse();
-                break;
+                break;*/
             case EmotePlayPayload playPayload:
                 handleStreamEmote(playPayload, player, instance);
                 break;
@@ -111,7 +111,7 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
      * @param player player
      * @param emotePacket BE emote uuid
      */
-    public void receiveBEEmote(P player, GeyserEmotePacket emotePacket) throws IOException {
+    public void receiveBEEmote(P player, GeyserEmotePacket emotePacket) {
         UUID javaEmote = bedrockEmoteMap.getJavaEmote(emotePacket.getEmoteID());
         if(javaEmote != null && UniversalEmoteSerializer.getEmote(javaEmote) != null){
             handleStreamEmote(new EmotePlayPayload(UniversalEmoteSerializer.getEmote(javaEmote)), player, null);
@@ -124,9 +124,8 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
      * @param data received data
      * @param player sender player
      * @param instance senders network handler
-     * @throws IOException probably not
      */
-    protected void handleStreamEmote(EmotePlayPayload data, P player, INetworkInstance instance) throws IOException {
+    protected void handleStreamEmote(EmotePlayPayload data, P player, INetworkInstance instance) {
         if (!data.valid() && doValidate()) {
             EventResult result = ServerEmoteEvents.EMOTE_VERIFICATION.invoker().verify(data.emoteData(), getUUIDFromPlayer(player));
             if (result != EventResult.FAIL) {
@@ -186,17 +185,6 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
     public void playerEntersInvalidPose(P player) {
         if (!getPlayerNetworkInstance(player).getEmoteTracker().isForced()) {
             stopEmote(player, null);
-        }
-    }
-
-    public void receiveGeyserMessage(P player, byte[] data){
-        try {
-            GeyserEmotePacket packet = new GeyserEmotePacket();
-            packet.read(data);
-            packet.setRuntimeEntityID(getRuntimePlayerID(player));
-            receiveBEEmote(player, packet);
-        }catch (Throwable t){
-            EmoteInstance.instance.getLogger().log(Level.WARNING, t.getMessage(), t);
         }
     }
 

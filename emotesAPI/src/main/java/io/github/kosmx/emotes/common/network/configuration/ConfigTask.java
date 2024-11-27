@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.function.Consumer;
 
 public class ConfigTask implements ConfigurationTask {
-    public static final Type TYPE = new Type("emotes:configuration");
+    public static final Type TYPE = new Type("emotes:config");
 
     @Override
     public void start(@NotNull Consumer<Packet<?>> consumer) { // TODO

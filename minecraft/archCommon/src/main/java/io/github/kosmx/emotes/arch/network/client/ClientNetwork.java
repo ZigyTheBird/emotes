@@ -3,6 +3,7 @@ package io.github.kosmx.emotes.arch.network.client;
 import dev.architectury.injectables.annotations.ExpectPlatform;
 import io.github.kosmx.emotes.api.proxy.AbstractNetworkInstance;
 import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
+import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.protocol.Packet;
@@ -30,7 +31,7 @@ public final class ClientNetwork extends AbstractNetworkInstance {
 
     @Override
     public boolean isActive() {
-        return isServerChannelOpen(DiscoveryPayload.TYPE.id());
+        return isServerChannelOpen(EmotePlayPayload.TYPE.id());
     }
 
     @Override
@@ -55,11 +56,10 @@ public final class ClientNetwork extends AbstractNetworkInstance {
      * @deprecated Don't play on such servers
      */
     @Deprecated
-    public void configureOnPlay(@NotNull Consumer<Packet<?>> consumer) {
+    public void configureOnPlay(Consumer<CustomPacketPayload> consumer) {
         if (!this.isConfiguredNormally && isActive()) {
             EmoteInstance.instance.getLogger().log(Level.WARNING, "The server failed to configure the client, attempting to configure...");
-
-            // consumer.accept(new ServerboundCustomPayloadPacket(new DiscoveryPayload())); TODO
+            sendC2SConfig(consumer);
         }
     }
 

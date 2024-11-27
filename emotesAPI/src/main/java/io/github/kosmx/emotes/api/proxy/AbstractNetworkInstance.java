@@ -1,12 +1,14 @@
 package io.github.kosmx.emotes.api.proxy;
 
 import io.github.kosmx.emotes.common.network.PacketConfig;
+import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * Implement this if you want to act as a proxy for EmoteX
@@ -110,6 +112,11 @@ public abstract class AbstractNetworkInstance implements INetworkInstance{
     @Override
     public boolean isServerTrackingPlayState() {
         return this.doesServerTrackEmotePlay;
+    }
+
+    @Override
+    public void sendC2SConfig(Consumer<CustomPacketPayload> consumer) { // TODO
+        consumer.accept(new DiscoveryPayload(getRemoteVersions()));
     }
 
     @Override

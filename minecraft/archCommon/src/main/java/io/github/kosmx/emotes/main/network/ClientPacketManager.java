@@ -8,7 +8,6 @@ import io.github.kosmx.emotes.main.EmoteHolder;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.logging.Level;
 
@@ -40,35 +39,20 @@ public final class ClientPacketManager extends EmotesProxyManager {
             for(INetworkInstance network:networkInstances){
                 if(network.isActive()){
                     if (target == null || !network.isServerTrackingPlayState()) {
-                        try {
-                            /*EmotePacket.Builder builder = packetBuilder.copy(); TODO
-                            if (!network.sendPlayerID()) builder.removePlayerID();
-                            builder.setSizeLimit(network.maxDataSize());
-                            builder.setVersion(network.getRemoteVersions());*/
-                            network.sendMessage(payload, target);    //everything is happening on the heap, there won't be any memory leak
-                        } catch(IOException exception) {
-                            EmoteInstance.instance.getLogger().log(Level.WARNING, "Error while sending packet: " + exception.getMessage(), true);
-                            if (EmoteInstance.config.showDebug.get()) {
-                                EmoteInstance.instance.getLogger().log(Level.WARNING, exception.getMessage(), exception);
-                            }
-                        }
+                        /*EmotePacket.Builder builder = packetBuilder.copy(); TODO
+                        if (!network.sendPlayerID()) builder.removePlayerID();
+                        builder.setSizeLimit(network.maxDataSize());
+                        builder.setVersion(network.getRemoteVersions());*/
+                        network.sendMessage(payload, target);    //everything is happening on the heap, there won't be any memory leak
                     }
                 }
             }
         }
         if(defaultNetwork.isActive() && (target == null || !defaultNetwork.isServerTrackingPlayState())){
             //if(!defaultNetwork.sendPlayerID())packetBuilder.removePlayerID();
-            try {
-                //packetBuilder.setSizeLimit(defaultNetwork.maxDataSize());
-                //packetBuilder.setVersion(defaultNetwork.getRemoteVersions());
-                defaultNetwork.sendMessage(payload, target);
-            }
-            catch (IOException exception){
-                EmoteInstance.instance.getLogger().log(Level.WARNING, "Error while sending packet: " + exception.getMessage(), true);
-                if(EmoteInstance.config.showDebug.get()) {
-                    EmoteInstance.instance.getLogger().log(Level.WARNING, exception.getMessage(), exception);
-                }
-            }
+            //packetBuilder.setSizeLimit(defaultNetwork.maxDataSize());
+            //packetBuilder.setVersion(defaultNetwork.getRemoteVersions());
+            defaultNetwork.sendMessage(payload, target);
         }
     }
 

@@ -3,12 +3,12 @@ package io.github.kosmx.emotes.api.proxy;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * To hold information about network
@@ -36,13 +36,6 @@ public interface INetworkInstance {
     void setVersions(HashMap<Byte, Byte> map);
 
     /**
-     * Invoked after receiving the presence packet
-     * {@link INetworkInstance#setVersions(HashMap)}
-     * Used to send server-side configuration/emotes
-     */
-    default void presenceResponse(){}
-
-    /**
      * Do send the sender's id to the server
      * @return true means send
      */
@@ -56,9 +49,8 @@ public interface INetworkInstance {
      * @param payload packet payload
      * @param target target to send message, if null, everyone in the view distance
      *               on server-side target will be ignored
-     * @throws IOException when message write to bytes has failed
      */
-    void sendMessage(CustomPacketPayload payload, @Nullable UUID target) throws IOException;
+    void sendMessage(CustomPacketPayload payload, @Nullable UUID target);
 
     /**
      * Network instance has received a message, it will send it to EmoteX core to execute
@@ -69,6 +61,13 @@ public interface INetworkInstance {
      */
     default void receiveMessage(CustomPacketPayload payload, UUID player) {
         EmotesProxyManager.receiveMessage(payload, player, this);
+    }
+
+    /**
+     * Client is sending config message to server. Vanilla clients will answer to the server configuration phase message.
+     * This might get invoked multiple times on the same network instance.
+     */
+    default void sendC2SConfig(Consumer<CustomPacketPayload> consumer) {
     }
 
     /**

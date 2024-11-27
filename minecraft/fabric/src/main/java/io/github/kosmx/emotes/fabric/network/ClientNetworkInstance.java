@@ -1,58 +1,40 @@
 package io.github.kosmx.emotes.fabric.network;
 
-import io.github.kosmx.emotes.arch.network.NetworkPlatformTools;
 import io.github.kosmx.emotes.arch.network.client.ClientNetwork;
-import io.github.kosmx.emotes.executor.EmoteInstance;
-import net.fabricmc.fabric.api.client.networking.v1.C2SPlayChannelEvents;
+import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
+import io.github.kosmx.emotes.common.network.payloads.EmoteFilePayload;
+import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
+import io.github.kosmx.emotes.common.network.payloads.EmoteStopPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientConfigurationNetworking;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
-import java.io.IOException;
-import java.util.logging.Level;
-
 public class ClientNetworkInstance {
 
     public static void init(){
-        FabricIsBestYouAreRightKosmX.init(true);
-
         // Configuration
-
-        ClientConfigurationNetworking.registerGlobalReceiver(NetworkPlatformTools.EMOTE_CHANNEL_ID, (buf, context) -> {
-            try {
-                ClientNetwork.INSTANCE.receiveConfigMessage(buf.bytes(), context.responseSender()::sendPacket);
-            } catch (IOException e) {
-                EmoteInstance.instance.getLogger().log(Level.WARNING, e.getMessage(), e);
-            }
+        ClientConfigurationNetworking.registerGlobalReceiver(DiscoveryPayload.TYPE, (message, context) -> {
+            ClientNetwork.INSTANCE.receiveMessage(message);
+            ClientNetwork.INSTANCE.sendC2SConfig(context.responseSender()::sendPacket);
         });
-
-        ClientConfigurationNetworking.registerGlobalReceiver(NetworkPlatformTools.STREAM_CHANNEL_ID, (buf, context) -> {
-            try {
-                ClientNetwork.INSTANCE.receiveStreamMessage(buf.bytes(), context.responseSender()::sendPacket);
-            } catch (IOException e) {
-                EmoteInstance.instance.getLogger().log(Level.WARNING, e.getMessage(), e);
-            }
-        });
-
-        // Play
-        C2SPlayChannelEvents.REGISTER.register((handler, sender, minecraft, channels) -> {
-            if (channels.contains(NetworkPlatformTools.EMOTE_CHANNEL_ID.id())) {
-                ClientNetwork.INSTANCE.configureOnPlay(sender::sendPacket);
-            }
-        });
-        // ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> ClientNetwork.INSTANCE.configureOnPlay(sender::sendPacket));
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientNetwork.INSTANCE.disconnect());
-
-        ClientPlayNetworking.registerGlobalReceiver(NetworkPlatformTools.EMOTE_CHANNEL_ID,
-                (buf, context) -> ClientNetwork.INSTANCE.receiveMessage(buf.unwrapBytes())
+        ClientConfigurationNetworking.registerGlobalReceiver(EmoteFilePayload.TYPE, (message, context) ->
+                ClientNetwork.INSTANCE.receiveMessage(message)
         );
 
-        ClientPlayNetworking.registerGlobalReceiver(NetworkPlatformTools.STREAM_CHANNEL_ID, (buf, context) -> {
-            try {
-                ClientNetwork.INSTANCE.receiveStreamMessage(buf.bytes(), null);
-            } catch (IOException e) {
-                EmoteInstance.instance.getLogger().log(Level.WARNING, e.getMessage(), e);
+        // Play
+        /*C2SPlayChannelEvents.REGISTER.register((handler, sender, minecraft, channels) -> {
+            if (channels.contains(DiscoveryPayload.TYPE.id())) {
+                ClientNetwork.INSTANCE.configureOnPlay(sender::sendPacket);
             }
-        });
+        });*/
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientNetwork.INSTANCE.disconnect());
+
+        ClientPlayNetworking.registerGlobalReceiver(EmotePlayPayload.TYPE, (message, context) ->
+                ClientNetwork.INSTANCE.receiveMessage(message)
+        );
+        ClientPlayNetworking.registerGlobalReceiver(EmoteStopPayload.TYPE, (message, context) ->
+                ClientNetwork.INSTANCE.receiveMessage(message)
+        );
+        // TODO stream
     }
 }

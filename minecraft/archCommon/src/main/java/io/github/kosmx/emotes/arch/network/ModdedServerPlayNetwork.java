@@ -3,15 +3,12 @@ package io.github.kosmx.emotes.arch.network;
 import io.github.kosmx.emotes.arch.mixin.ServerCommonPacketListenerAccessor;
 import io.github.kosmx.emotes.server.network.EmotePlayTracker;
 import io.github.kosmx.emotes.server.network.IServerNetworkInstance;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.UUID;
 
 /**
@@ -36,17 +33,7 @@ public class ModdedServerPlayNetwork extends AbstractServerNetwork implements IS
     }
 
     @Override
-    public void sendGeyserPacket(ByteBuffer buffer) {
-        serverGamePacketListener.send(NetworkPlatformTools.geyserPacket(buffer));
-    }
-
-    @Override
-    public void disconnect(String literal) {
-        serverGamePacketListener.disconnect(Component.literal(literal));
-    }
-
-    @Override
-    public void sendMessage(CustomPacketPayload payload, @Nullable UUID target) throws IOException {
+    public void sendMessage(CustomPacketPayload payload, @Nullable UUID target) {
         serverGamePacketListener.send(new ClientboundCustomPayloadPacket(payload));
     }
 

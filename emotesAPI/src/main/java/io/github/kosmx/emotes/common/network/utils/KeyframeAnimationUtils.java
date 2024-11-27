@@ -95,7 +95,7 @@ public class KeyframeAnimationUtils {
 
             ByteBuffer buffer = ByteBuffer.allocate(size);
             AnimationBinary.write(animation, buffer, version);
-            buf.writeBytes(buffer);
+            buf.writeBytes(INetworkInstance.safeGetBytesFromBuffer(buffer));
 
             ByteBufCodecs.optional(KeyframeAnimationUtils.NBS_STREAM_CODEC)
                     .encode(buf, Optional.ofNullable((NBS) animation.extraData.get("song")));
@@ -129,7 +129,7 @@ public class KeyframeAnimationUtils {
 
             ByteBuffer buffer = ByteBuffer.allocate(size);
             writer.write(buffer);
-            buf.writeBytes(buffer);
+            buf.writeBytes(INetworkInstance.safeGetBytesFromBuffer(buffer));
         }
     };
 }
