@@ -7,12 +7,14 @@ import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.mojang.brigadier.CommandDispatcher;
 import io.github.kosmx.emotes.bukkit.executor.BukkitInstance;
 import io.github.kosmx.emotes.bukkit.network.BukkitNetworkInstance;
 import io.github.kosmx.emotes.bukkit.network.ServerSideEmotePlay;
-import io.github.kosmx.emotes.bukkit.utils.BukkitUnwrapper;
+import io.github.kosmx.emotes.bukkit.utils.StreamCodecExpander;
 import io.github.kosmx.emotes.common.CommonData;
 import io.github.kosmx.emotes.common.network.GeyserEmotePacket;
+import io.github.kosmx.emotes.common.network.configuration.ConfigTask;
 import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteFilePayload;
 import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
@@ -24,9 +26,11 @@ import io.github.kosmx.emotes.server.config.Serializer;
 import io.github.kosmx.emotes.server.network.AbstractServerEmotePlay;
 import io.github.kosmx.emotes.server.serializer.UniversalEmoteSerializer;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.Component;
-import net.minecraft.Util;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import org.bukkit.Bukkit;
@@ -42,7 +46,7 @@ import java.util.UUID;
 import java.util.logging.Level;
 
 public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
-    public final Map<ResourceLocation, StreamCodec<ByteBuf, ? extends CustomPacketPayload>> payloads = new HashMap<>();
+    private final Map<ResourceLocation, StreamCodec<ByteBuf, ? extends CustomPacketPayload>> payloads = new HashMap<>();
     private ServerSideEmotePlay networkPlay = null;
     private ProtocolManager protocolManager;
 
@@ -68,6 +72,13 @@ public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
         this.payloads.put(EmoteFilePayload.TYPE.id(), EmoteFilePayload.STREAM_CODEC);
         this.payloads.put(StreamPayload.TYPE.id(), StreamPayload.STREAM_CODEC);
         this.payloads.put(GeyserEmotePacket.TYPE.id(), GeyserEmotePacket.STREAM_CODEC);
+
+        try {
+            StreamCodecExpander.expandMapped(ClientboundCustomPayloadPacket.GAMEPLAY_STREAM_CODEC, this.payloads);
+            StreamCodecExpander.expandMapped(ClientboundCustomPayloadPacket.CONFIG_STREAM_CODEC, this.payloads);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
 
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event ->
                 ServerCommands.register((CommandDispatcher) event.registrar().getDispatcher(), true)
@@ -129,18 +140,24 @@ public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
                 return;
             }
 
-            BukkitNetworkInstance playerNetwork = this.networkPlay.getPlayerNetworkInstance(player);
-            if (playerNetwork == null) {
-                EmoteInstance.instance.getLogger().log(Level.WARNING, "Player: " + player.getName() + " is not registered");
+            StreamCodec<ByteBuf, ? extends CustomPacketPayload> codec = this.payloads.get(id);
+            if (codec == null) {
+                EmoteInstance.instance.getLogger().log(Level.WARNING, "Failed to get codec for " + id);
                 return;
             }
 
+            if (ConfigurationSimulator.CONFIGURATION_MAP.containsKey(player)) { // In configuration phase
+                this.networkPlay.player_database.put(player.getUniqueId(), new BukkitNetworkInstance(player));
+                // TODO send emotes
+                ConfigurationSimulator.finishCurrentTask(player, ConfigTask.TYPE);
+            }
+
             this.networkPlay.receiveMessage(Objects.requireNonNull(
-                    BukkitUnwrapper.decodePayload(id, bytes)
-            ), player, playerNetwork);
+                    codec.decode(Unpooled.wrappedBuffer(bytes))
+            ), player, this.networkPlay.getPlayerNetworkInstance(player));
         } catch (Exception e) {
             EmoteInstance.instance.getLogger().log(Level.WARNING, "Failed to handle message!", e);
-            player.kick(Component.text("Failed to decode packet '" + type + "'"));
+            player.kick(Component.text("Failed to handle packet '" + type + "'"));
         }
     }
 }

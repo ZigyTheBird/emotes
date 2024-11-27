@@ -11,7 +11,6 @@ import org.bukkit.entity.Pose;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPoseChangeEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.HashMap;
@@ -19,9 +18,8 @@ import java.util.UUID;
 import java.util.logging.Level;
 
 public class ServerSideEmotePlay extends AbstractServerEmotePlay<Player> implements Listener {
-    final BukkitWrapper plugin;
-
-    final HashMap<UUID, BukkitNetworkInstance> player_database = new HashMap<>();
+    public final HashMap<UUID, BukkitNetworkInstance> player_database = new HashMap<>();
+    private final BukkitWrapper plugin;
 
     public ServerSideEmotePlay(BukkitWrapper plugin){
         this.plugin = plugin;
@@ -107,11 +105,6 @@ public class ServerSideEmotePlay extends AbstractServerEmotePlay<Player> impleme
         }catch (Exception e){
             EmoteInstance.instance.getLogger().log(Level.WARNING, e.getMessage(), e);
         }
-    }
-
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event){
-        this.player_database.put(event.getPlayer().getUniqueId(), new BukkitNetworkInstance(event.getPlayer()));
     }
 
     @EventHandler
