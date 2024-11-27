@@ -47,11 +47,7 @@ public class ConfigurationSimulator implements Listener {
     @SuppressWarnings("unchecked")
     public void onPlayerLinksSend(PlayerLinksSendEvent event) {
         Set<String> channels = event.getPlayer().getListeningPluginChannels();
-        if (channels.isEmpty()) {
-            throw new NullPointerException();
-        }
-
-        if (!channels.contains(DiscoveryPayload.TYPE.id().toString())) {
+        if (!channels.isEmpty() && !channels.contains(DiscoveryPayload.TYPE.id().toString())) {
             EmoteInstance.instance.getLogger().log(Level.FINE, "Client doesn't support emotes, ignoring");
             return;
         }

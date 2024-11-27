@@ -12,7 +12,6 @@ import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteFilePayload;
 import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteStopPayload;
-import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.server.ServerCommands;
 import io.github.kosmx.emotes.server.config.Serializer;
@@ -37,7 +36,9 @@ import java.util.Objects;
 import java.util.logging.Level;
 
 public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
-    private final Map<ResourceLocation, StreamCodec<ByteBuf, ? extends CustomPacketPayload>> payloads = new HashMap<>();
+    private final Map<ResourceLocation, StreamCodec<ByteBuf, ? extends CustomPacketPayload>> payloadsToClient = new HashMap<>();
+    private final Map<ResourceLocation, StreamCodec<ByteBuf, ? extends CustomPacketPayload>> payloadsToServer = new HashMap<>();
+
     private ServerSideEmotePlay networkPlay = null;
 
     @Override
@@ -54,16 +55,24 @@ public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
         EmoteInstance.config = Serializer.getConfig();
         UniversalEmoteSerializer.loadEmotes();
 
-        this.payloads.put(DiscoveryPayload.TYPE.id(), DiscoveryPayload.STREAM_CODEC);
-        this.payloads.put(EmotePlayPayload.TYPE.id(), EmotePlayPayload.STREAM_CODEC);
-        this.payloads.put(EmoteStopPayload.TYPE.id(), EmoteStopPayload.STREAM_CODEC);
-        this.payloads.put(EmoteFilePayload.TYPE.id(), EmoteFilePayload.STREAM_CODEC);
-        this.payloads.put(StreamPayload.TYPE.id(), StreamPayload.STREAM_CODEC);
-        this.payloads.put(GeyserEmotePacket.TYPE.id(), GeyserEmotePacket.STREAM_CODEC);
+        // Config
+        this.payloadsToClient.put(EmoteFilePayload.TYPE.id(), EmoteFilePayload.STREAM_CODEC);
+        this.payloadsToClient.put(DiscoveryPayload.TYPE.id(), DiscoveryPayload.STREAM_CODEC);
+        this.payloadsToServer.put(DiscoveryPayload.TYPE.id(), DiscoveryPayload.STREAM_CODEC);
+        // Player
+        this.payloadsToClient.put(EmotePlayPayload.TYPE.id(), EmotePlayPayload.STREAM_CODEC);
+        this.payloadsToServer.put(EmotePlayPayload.TYPE.id(), EmotePlayPayload.STREAM_CODEC);
+        this.payloadsToClient.put(EmoteStopPayload.TYPE.id(), EmoteStopPayload.STREAM_CODEC);
+        this.payloadsToServer.put(EmoteStopPayload.TYPE.id(), EmoteStopPayload.STREAM_CODEC);
+        // Bedrock
+        this.payloadsToServer.put(GeyserEmotePacket.TYPE.id(), GeyserEmotePacket.STREAM_CODEC);
+        // TODO Stream
+        // this.payloadsToClient.put(StreamPayload.TYPE.id(), StreamPayload.STREAM_CODEC);
+        // this.payloadsToServer.put(StreamPayload.TYPE.id(), StreamPayload.STREAM_CODEC);
 
         try {
-            StreamCodecExpander.expandMapped(ClientboundCustomPayloadPacket.GAMEPLAY_STREAM_CODEC, this.payloads);
-            StreamCodecExpander.expandMapped(ClientboundCustomPayloadPacket.CONFIG_STREAM_CODEC, this.payloads);
+            StreamCodecExpander.expandMapped(ClientboundCustomPayloadPacket.GAMEPLAY_STREAM_CODEC, this.payloadsToClient);
+            StreamCodecExpander.expandMapped(ClientboundCustomPayloadPacket.CONFIG_STREAM_CODEC, this.payloadsToClient);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -77,8 +86,10 @@ public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
     public void onEnable() {
         this.networkPlay = new ServerSideEmotePlay(this);
 
-        for (ResourceLocation id : this.payloads.keySet()) {
+        for (ResourceLocation id : this.payloadsToClient.keySet()) {
             getServer().getMessenger().registerOutgoingPluginChannel(this, id.toString());
+        }
+        for (ResourceLocation id : this.payloadsToServer.keySet()) {
             getServer().getMessenger().registerIncomingPluginChannel(this, id.toString(), this);
         }
 
@@ -90,8 +101,10 @@ public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
 
     @Override
     public void onDisable() {
-        for (ResourceLocation id : this.payloads.keySet()) {
+        for (ResourceLocation id : this.payloadsToClient.keySet()) {
             getServer().getMessenger().unregisterOutgoingPluginChannel(this, id.toString());
+        }
+        for (ResourceLocation id : this.payloadsToServer.keySet()) {
             getServer().getMessenger().unregisterIncomingPluginChannel(this, id.toString());
         }
     }
@@ -105,7 +118,7 @@ public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
                 return;
             }
 
-            StreamCodec<ByteBuf, ? extends CustomPacketPayload> codec = this.payloads.get(id);
+            StreamCodec<ByteBuf, ? extends CustomPacketPayload> codec = this.payloadsToServer.get(id);
             if (codec == null) {
                 EmoteInstance.instance.getLogger().log(Level.WARNING, "Failed to get codec for " + id);
                 return;
