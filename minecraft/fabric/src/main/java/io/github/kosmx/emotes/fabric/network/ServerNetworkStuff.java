@@ -18,7 +18,7 @@ import java.util.logging.Level;
 
 public final class ServerNetworkStuff {
     public static void init() {
-        FabricIsBestYouAreRightKosmX.init();
+        PayloadTypeRegistator.init();
         CommonServerNetworkHandler.instance.init();
 
         // Config networking
