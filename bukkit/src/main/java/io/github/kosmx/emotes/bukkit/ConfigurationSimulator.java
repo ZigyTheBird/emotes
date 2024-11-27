@@ -6,6 +6,7 @@ import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.netty.buffer.Unpooled;
 import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 import net.minecraft.resources.ResourceLocation;
@@ -16,6 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLinksSendEvent;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,6 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -75,7 +78,12 @@ public class ConfigurationSimulator implements Listener {
         Queue<ConfigurationTask> configurationTasks = (Queue<ConfigurationTask>)
                 CONFIGURATION_TASKS.get(configurationListener);
 
-        configurationTasks.add(new ConfigTask());
+        configurationTasks.add(new ConfigTask() {
+            @Override
+            public void start(@NotNull Consumer<Packet<?>> consumer) {
+                super.start(packet -> consumer.accept(BukkitUnwrapper.wrapPayload(packet)));
+            }
+        });
         CONFIGURATION_MAP.put(event.getPlayer(), configurationListener);
     }
 

@@ -4,7 +4,6 @@ import io.github.kosmx.emotes.api.proxy.AbstractNetworkInstance;
 import io.github.kosmx.emotes.bukkit.utils.BukkitUnwrapper;
 import io.github.kosmx.emotes.server.network.EmotePlayTracker;
 import io.github.kosmx.emotes.server.network.IServerNetworkInstance;
-import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import org.bukkit.entity.Player;
 
@@ -31,8 +30,7 @@ public class BukkitNetworkInstance extends AbstractNetworkInstance implements IS
             return;
         }
 
-        BukkitUnwrapper.getNormalPlayer(this.player).connection
-                .send(new ClientboundCustomPayloadPacket(payload));
+        BukkitUnwrapper.sendPayloadAsPluginMessage(this.player, payload);
     }
 
     @Override

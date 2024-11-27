@@ -4,7 +4,6 @@ import com.mojang.brigadier.CommandDispatcher;
 import io.github.kosmx.emotes.bukkit.executor.BukkitInstance;
 import io.github.kosmx.emotes.bukkit.network.BukkitNetworkInstance;
 import io.github.kosmx.emotes.bukkit.network.ServerSideEmotePlay;
-import io.github.kosmx.emotes.bukkit.utils.StreamCodecExpander;
 import io.github.kosmx.emotes.common.CommonData;
 import io.github.kosmx.emotes.common.network.GeyserEmotePacket;
 import io.github.kosmx.emotes.common.network.configuration.ConfigTask;
@@ -22,7 +21,6 @@ import io.netty.buffer.Unpooled;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.Component;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import org.bukkit.Bukkit;
@@ -37,8 +35,8 @@ import java.util.Objects;
 import java.util.logging.Level;
 
 public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
-    private final Map<ResourceLocation, StreamCodec<ByteBuf, ? extends CustomPacketPayload>> payloadsToClient = new HashMap<>();
-    private final Map<ResourceLocation, StreamCodec<ByteBuf, ? extends CustomPacketPayload>> payloadsToServer = new HashMap<>();
+    public final Map<ResourceLocation, StreamCodec<ByteBuf, ? extends CustomPacketPayload>> payloadsToClient = new HashMap<>();
+    public final Map<ResourceLocation, StreamCodec<ByteBuf, ? extends CustomPacketPayload>> payloadsToServer = new HashMap<>();
 
     private ServerSideEmotePlay networkPlay = null;
 
@@ -70,13 +68,6 @@ public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
         // Stream
         this.payloadsToClient.put(StreamPayload.TYPE.id(), StreamPayload.STREAM_CODEC);
         this.payloadsToServer.put(StreamPayload.TYPE.id(), StreamPayload.STREAM_CODEC);
-
-        try {
-            StreamCodecExpander.expandMapped(ClientboundCustomPayloadPacket.GAMEPLAY_STREAM_CODEC, this.payloadsToClient);
-            StreamCodecExpander.expandMapped(ClientboundCustomPayloadPacket.CONFIG_STREAM_CODEC, this.payloadsToClient);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
 
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event ->
                 ServerCommands.register((CommandDispatcher) event.registrar().getDispatcher(), true)
