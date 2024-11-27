@@ -12,16 +12,26 @@ import java.util.function.Consumer;
 public class ConfigTask implements ConfigurationTask {
     public static final Type TYPE = new Type("emotes:config");
 
+    private final boolean doesServerTrackEmotePlay;
+
+    public ConfigTask(boolean doesServerTrackEmotePlay) {
+        this.doesServerTrackEmotePlay = doesServerTrackEmotePlay;
+    }
+
+    public ConfigTask() {
+        this(true);
+    }
+
     @Override
     public void start(@NotNull Consumer<Packet<?>> consumer) {
         consumer.accept(new ClientboundCustomPayloadPacket(new DiscoveryPayload(
                 AnimationBinary.getCurrentVersion(), // Animator version
                 false, // send player uuid?
-                true,  // track player state
+                this.doesServerTrackEmotePlay,  // track player state
 
                 false, // disable NBS?
-                true, // Allow emote stream?
-                true // Aloow emote sync?
+                true, // Aloow emote sync?
+                Short.MAX_VALUE
         )));
     }
 

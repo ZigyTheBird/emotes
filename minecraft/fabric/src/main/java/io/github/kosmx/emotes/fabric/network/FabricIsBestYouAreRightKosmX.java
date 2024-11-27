@@ -5,6 +5,7 @@ import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteFilePayload;
 import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteStopPayload;
+import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 
 public class FabricIsBestYouAreRightKosmX {
@@ -23,6 +24,8 @@ public class FabricIsBestYouAreRightKosmX {
         // Bedrock
         PayloadTypeRegistry.playC2S().register(GeyserEmotePacket.TYPE, GeyserEmotePacket.STREAM_CODEC);
 
-        // TODO stream
+        // Stream
+        PayloadTypeRegistry.playS2C().register(StreamPayload.TYPE, StreamPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(StreamPayload.TYPE, StreamPayload.STREAM_CODEC);
     }
 }

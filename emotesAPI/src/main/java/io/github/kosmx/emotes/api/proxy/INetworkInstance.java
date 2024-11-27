@@ -1,6 +1,8 @@
 package io.github.kosmx.emotes.api.proxy;
 
+import io.github.kosmx.emotes.common.network.EmoteStreamHelper;
 import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
+import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import javax.annotation.Nullable;
@@ -35,6 +37,22 @@ public interface INetworkInstance {
     void setVersions(DiscoveryPayload payload);
 
     /**
+     * Do send the sender's id to the server
+     * @return true means send
+     */
+    default boolean sendPlayerID(){
+        return getRemoteVersions().sendPlayerID();
+    }
+
+    /**
+     * Does this server allow emote streams from client. This can allow larger/longer emotes but can be abused
+     * @return is emote streamin allowed
+     */
+    default boolean allowEmoteStreamC2S() {
+        return getRemoteVersions().allowStream();
+    }
+
+    /**
      * The Proxy controller ask you to send the message,
      * only if {@link #isActive()} is true
      * @param payload packet payload
@@ -42,6 +60,14 @@ public interface INetworkInstance {
      *               on server-side target will be ignored
      */
     void sendMessage(CustomPacketPayload payload, @Nullable UUID target);
+
+    default void receiveStreamMessage(StreamPayload streamPayload, UUID player) {
+        CustomPacketPayload payload = getStreamHelper().receiveStream(streamPayload);
+        if (payload == null) {
+            return;
+        }
+        receiveMessage(payload, player);
+    }
 
     /**
      * Network instance has received a message, it will send it to EmoteX core to execute
@@ -91,7 +117,9 @@ public interface INetworkInstance {
      * Does the track the emote play state of every player -> true
      * The client has to resend the emote if a new player get close -> false
      */
-    boolean isServerTrackingPlayState();
+    default boolean isServerTrackingPlayState() {
+        return getRemoteVersions().doesServerTrackEmotePlay();
+    }
 
     /**
      * Maximum size of the data what the instance can send
@@ -99,7 +127,28 @@ public interface INetworkInstance {
      * {@link AbstractNetworkInstance#maxDataSize()} defaults to {@link Short#MAX_VALUE}
      * @return max size of bytes[]
      */
-    int maxDataSize();
+    default int maxDataSize() {
+        return getRemoteVersions().maxDataSize();
+    }
+
+    EmoteStreamHelper getStreamHelper();
+
+    default boolean sendStreamMessage(CustomPacketPayload payload) {
+        if (payload instanceof StreamPayload || getStreamHelper() == null) {
+            return false;
+        }
+
+        return getStreamHelper().sendMessage(payload,
+                stream -> sendMessage(stream, null)
+        );
+    }
+
+    /**
+     * When the network instance disconnects...
+     */
+    default void disconnect(){
+        EmotesProxyManager.disconnectInstance(this);
+    }
 
     /**
      * If {@link ByteBuffer} is wrapped, it is safe to get the array

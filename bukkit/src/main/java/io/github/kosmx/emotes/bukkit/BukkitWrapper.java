@@ -12,6 +12,7 @@ import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteFilePayload;
 import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteStopPayload;
+import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.server.ServerCommands;
 import io.github.kosmx.emotes.server.config.Serializer;
@@ -66,9 +67,9 @@ public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
         this.payloadsToServer.put(EmoteStopPayload.TYPE.id(), EmoteStopPayload.STREAM_CODEC);
         // Bedrock
         this.payloadsToServer.put(GeyserEmotePacket.TYPE.id(), GeyserEmotePacket.STREAM_CODEC);
-        // TODO Stream
-        // this.payloadsToClient.put(StreamPayload.TYPE.id(), StreamPayload.STREAM_CODEC);
-        // this.payloadsToServer.put(StreamPayload.TYPE.id(), StreamPayload.STREAM_CODEC);
+        // Stream
+        this.payloadsToClient.put(StreamPayload.TYPE.id(), StreamPayload.STREAM_CODEC);
+        this.payloadsToServer.put(StreamPayload.TYPE.id(), StreamPayload.STREAM_CODEC);
 
         try {
             StreamCodecExpander.expandMapped(ClientboundCustomPayloadPacket.GAMEPLAY_STREAM_CODEC, this.payloadsToClient);
@@ -130,9 +131,15 @@ public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
                 ConfigurationSimulator.finishCurrentTask(player, ConfigTask.TYPE);
             }
 
-            this.networkPlay.receiveMessage(Objects.requireNonNull(
-                    codec.decode(Unpooled.wrappedBuffer(bytes))
-            ), player, this.networkPlay.getPlayerNetworkInstance(player));
+            BukkitNetworkInstance networkInstance = this.networkPlay.getPlayerNetworkInstance(player);
+
+            CustomPacketPayload payload = codec.decode(Unpooled.wrappedBuffer(bytes));
+            if (payload instanceof StreamPayload streamPayload) {
+                this.networkPlay.receiveStreamMessage(streamPayload, player, networkInstance);
+                return;
+            }
+
+            this.networkPlay.receiveMessage(Objects.requireNonNull(payload), player, networkInstance);
         } catch (Exception e) {
             EmoteInstance.instance.getLogger().log(Level.WARNING, "Failed to handle message!", e);
             player.kick(Component.text("Failed to handle packet '" + type + "'"));

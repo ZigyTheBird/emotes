@@ -2,6 +2,7 @@ package io.github.kosmx.emotes.arch.network;
 
 import io.github.kosmx.emotes.arch.mixin.ServerChunkCacheAccessor;
 import io.github.kosmx.emotes.common.network.GeyserEmotePacket;
+import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.server.network.AbstractServerEmotePlay;
 import io.github.kosmx.emotes.server.network.IServerNetworkInstance;
@@ -27,6 +28,16 @@ public final class CommonServerNetworkHandler extends AbstractServerEmotePlay<Pl
     private CommonServerNetworkHandler() {} // make ctor private for singleton class
 
     public void init() {
+    }
+
+    public void receiveStreamMessage(StreamPayload payload, Player player) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            try {
+                receiveStreamMessage(payload, player, getHandler(serverPlayer.connection));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public void receiveMessage(CustomPacketPayload payload, Player player) {

@@ -27,6 +27,10 @@ public class BukkitNetworkInstance extends AbstractNetworkInstance implements IS
 
     @Override
     public void sendMessage(CustomPacketPayload payload, @Nullable UUID target) {
+        if (sendStreamMessage(payload)) {
+            return;
+        }
+
         BukkitUnwrapper.getNormalPlayer(this.player).connection
                 .send(new ClientboundCustomPayloadPacket(payload));
     }

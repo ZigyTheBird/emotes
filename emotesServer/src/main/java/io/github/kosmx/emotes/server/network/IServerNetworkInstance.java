@@ -4,7 +4,6 @@ import io.github.kosmx.emotes.api.proxy.INetworkInstance;
 import io.github.kosmx.emotes.common.network.GeyserEmotePacket;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 public interface IServerNetworkInstance extends INetworkInstance {
 

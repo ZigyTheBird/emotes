@@ -9,6 +9,7 @@ import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteFilePayload;
 import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteStopPayload;
+import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -52,9 +53,13 @@ public class ForgeNetwork {
                 // Bedrock
                 .playToServer(GeyserEmotePacket.TYPE, GeyserEmotePacket.STREAM_CODEC,
                         (message, context) -> CommonServerNetworkHandler.instance.receiveBEEmote(context.player(), message)
-                );
+                )
 
-        // TODO stream
+                // Stream
+                .playBidirectional(StreamPayload.TYPE, StreamPayload.STREAM_CODEC, new DirectionalPayloadHandler<>(
+                        (message, context) -> ClientNetwork.INSTANCE.receiveStreamMessage(message),
+                        (message, context) -> CommonServerNetworkHandler.instance.receiveStreamMessage(message, context.player())
+                ));
     }
 
     @SubscribeEvent

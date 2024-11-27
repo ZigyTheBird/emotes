@@ -7,6 +7,7 @@ import io.github.kosmx.emotes.common.network.configuration.ConfigTask;
 import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteStopPayload;
+import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
@@ -46,6 +47,8 @@ public final class ServerNetworkStuff {
         ServerPlayNetworking.registerGlobalReceiver(GeyserEmotePacket.TYPE, (message, context) ->
                 CommonServerNetworkHandler.instance.receiveBEEmote(context.player(), message)
         );
-        // TODO stream
+        ServerPlayNetworking.registerGlobalReceiver(StreamPayload.TYPE, (message, context) ->
+                CommonServerNetworkHandler.instance.receiveStreamMessage(message, context.player())
+        );
     }
 }

@@ -34,6 +34,9 @@ public class ModdedServerPlayNetwork extends AbstractServerNetwork implements IS
 
     @Override
     public void sendMessage(CustomPacketPayload payload, @Nullable UUID target) {
+        if (sendStreamMessage(payload)) {
+            return;
+        }
         serverGamePacketListener.send(new ClientboundCustomPayloadPacket(payload));
     }
 

@@ -5,6 +5,7 @@ import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteFilePayload;
 import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteStopPayload;
+import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientConfigurationNetworking;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -30,6 +31,8 @@ public class ClientNetworkInstance {
         ClientPlayNetworking.registerGlobalReceiver(EmoteStopPayload.TYPE, (message, context) ->
                 ClientNetwork.INSTANCE.receiveMessage(message)
         );
-        // TODO stream
+        ClientPlayNetworking.registerGlobalReceiver(StreamPayload.TYPE, (message, context) ->
+                ClientNetwork.INSTANCE.receiveStreamMessage(message)
+        );
     }
 }

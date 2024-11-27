@@ -1,6 +1,8 @@
 package io.github.kosmx.emotes.api.proxy;
 
+import io.github.kosmx.emotes.common.network.EmoteStreamHelper;
 import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
+import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import javax.annotation.Nullable;
@@ -14,6 +16,7 @@ import java.util.function.Consumer;
  */
 public abstract class AbstractNetworkInstance implements INetworkInstance{
     protected DiscoveryPayload discoveryPayload = DiscoveryPayload.DEFAULT;
+    private EmoteStreamHelper emoteStreamHelper;
 
     /*
      * You have to implement at least one of these three functions
@@ -36,6 +39,10 @@ public abstract class AbstractNetworkInstance implements INetworkInstance{
         throw new UnsupportedOperationException("You should have implemented send emote feature");
     }
 
+    public void receiveStreamMessage(StreamPayload payload){
+        this.receiveStreamMessage(payload, null);
+    }
+
     /**
      * Receive message, but you don't know who sent this
      * The bytes data has to contain the identity of the sender
@@ -49,8 +56,13 @@ public abstract class AbstractNetworkInstance implements INetworkInstance{
     /**
      * When the network instance disconnects...
      */
-    protected void disconnect(){
-        EmotesProxyManager.disconnectInstance(this);
+    @Override
+    public void disconnect(){
+        INetworkInstance.super.disconnect();
+        if (this.emoteStreamHelper != null) {
+            this.emoteStreamHelper.close();
+            this.emoteStreamHelper = null;
+        }
     }
 
     /**
@@ -83,17 +95,20 @@ public abstract class AbstractNetworkInstance implements INetworkInstance{
     }
 
     @Override
-    public boolean isServerTrackingPlayState() {
-        return this.discoveryPayload.doesServerTrackEmotePlay();
-    }
-
-    @Override
     public void sendC2SConfig(Consumer<CustomPacketPayload> consumer) {
         consumer.accept(this.discoveryPayload); // TODO override settings
     }
 
     @Override
-    public int maxDataSize() {
-        return Short.MAX_VALUE;
+    public EmoteStreamHelper getStreamHelper() {
+        if (maxDataSize() <= 0) {
+            return null;
+        }
+
+        if (this.emoteStreamHelper == null) {
+            this.emoteStreamHelper = new EmoteStreamHelper(maxDataSize());
+        }
+
+        return this.emoteStreamHelper;
     }
 }

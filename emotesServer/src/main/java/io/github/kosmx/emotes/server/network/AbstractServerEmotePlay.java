@@ -13,6 +13,7 @@ import io.github.kosmx.emotes.common.network.GeyserEmotePacket;
 import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteStopPayload;
+import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
 import io.github.kosmx.emotes.common.tools.BiMap;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.server.config.Serializer;
@@ -86,6 +87,14 @@ public abstract class AbstractServerEmotePlay<P> extends ServerEmoteAPI {
 
     protected IServerNetworkInstance getPlayerNetworkInstance(UUID player) { //For potential optimization
         return getPlayerNetworkInstance(this.getPlayerFromUUID(player));
+    }
+
+    public void receiveStreamMessage(StreamPayload streamPayload, P player, INetworkInstance instance) throws IOException {
+        CustomPacketPayload payload = instance.getStreamHelper().receiveStream(streamPayload);
+        if (payload == null) {
+            return;
+        }
+        receiveMessage(payload, player, instance);
     }
 
     public void receiveMessage(CustomPacketPayload data, P player, INetworkInstance instance) throws IOException {
