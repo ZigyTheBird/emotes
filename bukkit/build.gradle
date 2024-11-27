@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id "io.papermc.paperweight.userdev" version "1.7.5"
+    id "xyz.jpenilla.run-paper" version "2.3.1"
     id 'maven-publish'
     id "com.modrinth.minotaur"
 }
@@ -44,6 +45,15 @@ dependencies {
 
     compileModule("dev.kosmx.player-anim:anim-core:${rootProject.player_animator_version}") {
         transitive false
+    }
+}
+
+tasks {
+    runServer {
+        minecraftVersion rootProject.minecraft_version
+        downloadPlugins {
+            url("https://github.com/dmulloy2/ProtocolLib/releases/download/${rootProject.protocollib_version}/ProtocolLib.jar")
+        }
     }
 }
 

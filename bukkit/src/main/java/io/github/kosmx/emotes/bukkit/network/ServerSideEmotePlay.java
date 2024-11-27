@@ -1,13 +1,11 @@
 package io.github.kosmx.emotes.bukkit.network;
 
 import io.github.kosmx.emotes.bukkit.BukkitWrapper;
-import io.github.kosmx.emotes.common.network.EmotePacket;
 import io.github.kosmx.emotes.common.network.GeyserEmotePacket;
-import io.github.kosmx.emotes.common.network.objects.NetData;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.server.network.AbstractServerEmotePlay;
 import io.github.kosmx.emotes.server.network.IServerNetworkInstance;
-import org.bukkit.Bukkit;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
 import org.bukkit.event.EventHandler;
@@ -25,33 +23,8 @@ public class ServerSideEmotePlay extends AbstractServerEmotePlay<Player> impleme
 
     final HashMap<UUID, BukkitNetworkInstance> player_database = new HashMap<>();
 
-
     public ServerSideEmotePlay(BukkitWrapper plugin){
         this.plugin = plugin;
-        Bukkit.getMessenger().registerOutgoingPluginChannel(plugin, BukkitWrapper.EmotePacket);
-        Bukkit.getMessenger().registerOutgoingPluginChannel(plugin, BukkitWrapper.GeyserPacket);
-        Bukkit.getMessenger().registerIncomingPluginChannel(plugin, BukkitWrapper.EmotePacket, this::receivePluginMessage);
-        Bukkit.getMessenger().registerIncomingPluginChannel(plugin, BukkitWrapper.GeyserPacket, this::receivePluginMessage);
-    }
-
-    private void receivePluginMessage(String channel, Player player, byte[] message) {
-        //EmoteInstance.instance.getLogger().log(Level.FINE, "[EMOTECRAFT] streaming emote");
-        if (channel.equals(BukkitWrapper.EmotePacket)) {
-            BukkitNetworkInstance playerNetwork = player_database.getOrDefault(player.getUniqueId(), null);
-            if (playerNetwork != null) {
-                //Let the common server logic process the message
-                try {
-                    this.receiveMessage(message, player, playerNetwork);
-                } catch (Exception e) {
-                    EmoteInstance.instance.getLogger().log(Level.WARNING, e.getMessage(), e);
-                }
-            } else {
-                EmoteInstance.instance.getLogger().log(Level.WARNING, "Player: " + player.getName() + " is not registered");
-            }
-        }
-        else {
-            receiveGeyserMessage(player, message);
-        }
     }
 
     @Override
@@ -70,7 +43,7 @@ public class ServerSideEmotePlay extends AbstractServerEmotePlay<Player> impleme
     }
 
     @Override
-    protected IServerNetworkInstance getPlayerNetworkInstance(Player player) {
+    public BukkitNetworkInstance getPlayerNetworkInstance(Player player) {
         UUID playerUuid = getUUIDFromPlayer(player);
         if (!player_database.containsKey(playerUuid)) {
             EmoteInstance.instance.getLogger().log(Level.INFO, "Player " + player.getName() + " never joined. If it is a fake player, the fake-player plugin forgot to fire join event.");
@@ -90,7 +63,7 @@ public class ServerSideEmotePlay extends AbstractServerEmotePlay<Player> impleme
         for(Player player1 : plugin.getServer().getOnlinePlayers()){
             if (player1 != player && player1.canSee(player)) {
                 try {
-                    player1.sendPluginMessage(plugin, BukkitWrapper.GeyserPacket, packet.write());
+                    sendForPlayer(packet, player1, getUUIDFromPlayer(player1));
                 }catch (Exception e){
                     EmoteInstance.instance.getLogger().log(Level.WARNING, e.getMessage(), e);
                 }
@@ -99,18 +72,16 @@ public class ServerSideEmotePlay extends AbstractServerEmotePlay<Player> impleme
     }
 
     @Override
-    protected void sendForEveryoneElse(NetData data, GeyserEmotePacket emotePacket, Player player) {
+    protected void sendForEveryoneElse(CustomPacketPayload payload, GeyserEmotePacket emotePacket, Player player) {
         for(Player player1 : plugin.getServer().getOnlinePlayers()){
             if (player1 != player && player1.canSee(player)) {
                 try {
                     //Bukkit server will filter if I really can send, or not.
                     //If else to not spam dumb forge clients.
-                    if(player1.getListeningPluginChannels().contains(BukkitWrapper.EmotePacket)) {
-                        EmotePacket.Builder packetBuilder = new EmotePacket.Builder(data.copy());
-                        packetBuilder.setVersion(getPlayerNetworkInstance(player1).getRemoteVersions());
-                        player1.sendPluginMessage(plugin, BukkitWrapper.EmotePacket, packetBuilder.build().write().array());
+                    if(player1.getListeningPluginChannels().contains(payload.type().id().toString())) {
+                        sendForPlayer(payload, player1, getUUIDFromPlayer(player1));
                     }
-                    else if(emotePacket != null) player1.sendPluginMessage(plugin, BukkitWrapper.GeyserPacket, emotePacket.write());
+                    else if(emotePacket != null) sendForPlayer(emotePacket, player1, getUUIDFromPlayer(player1));
                 }catch (Exception e){
                     EmoteInstance.instance.getLogger().log(Level.WARNING, e.getMessage(), e);
                 }
@@ -119,21 +90,20 @@ public class ServerSideEmotePlay extends AbstractServerEmotePlay<Player> impleme
     }
 
     @Override
-    protected void sendForPlayerInRange(NetData data, Player player, UUID target) {
+    protected void sendForPlayerInRange(CustomPacketPayload payload, Player player, UUID target) {
         Player targetPlayer = plugin.getServer().getPlayer(target);
         if (targetPlayer == null) return;
         if(targetPlayer.canSee(player)){
-            sendForPlayer(data, player, target);
+            sendForPlayer(payload, player, target);
         }
     }
 
     @Override
-    protected void sendForPlayer(NetData data, Player player, UUID target) {
-        Player targetPlayer = plugin.getServer().getPlayer(target);
+    protected void sendForPlayer(CustomPacketPayload payload, Player player, UUID target) {
+        IServerNetworkInstance targetPlayer = getPlayerNetworkInstance(target);
         try {
-            EmotePacket.Builder packetBuilder = new EmotePacket.Builder(data.copy());
-            packetBuilder.setVersion(getPlayerNetworkInstance(targetPlayer).getRemoteVersions());
-            targetPlayer.sendPluginMessage(plugin, BukkitWrapper.EmotePacket, packetBuilder.build().write().array());
+            // TODO multiversion
+            targetPlayer.sendMessage(payload, null);
         }catch (Exception e){
             EmoteInstance.instance.getLogger().log(Level.WARNING, e.getMessage(), e);
         }

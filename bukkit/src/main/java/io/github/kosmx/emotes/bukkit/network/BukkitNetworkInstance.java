@@ -2,13 +2,13 @@ package io.github.kosmx.emotes.bukkit.network;
 
 import io.github.kosmx.emotes.api.proxy.AbstractNetworkInstance;
 import io.github.kosmx.emotes.bukkit.BukkitWrapper;
-import io.github.kosmx.emotes.common.CommonData;
+import io.github.kosmx.emotes.bukkit.utils.BukkitUnwrapper;
 import io.github.kosmx.emotes.server.network.EmotePlayTracker;
 import io.github.kosmx.emotes.server.network.IServerNetworkInstance;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import org.bukkit.entity.Player;
 
 import javax.annotation.Nullable;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -22,16 +22,6 @@ public class BukkitNetworkInstance extends AbstractNetworkInstance implements IS
     @Override
     public EmotePlayTracker getEmoteTracker() {
         return this.emotePlayTracker;
-    }
-
-    @Override
-    public void sendGeyserPacket(ByteBuffer buffer) {
-        player.sendPluginMessage(bukkitPlugin, "geyser:emote", buffer.array());
-    }
-
-    @Override
-    public void disconnect(String literal) {
-        player.kickPlayer(literal);
     }
 
     public BukkitNetworkInstance(Player player){
@@ -49,8 +39,8 @@ public class BukkitNetworkInstance extends AbstractNetworkInstance implements IS
     }
 
     @Override
-    public void sendMessage(byte[] bytes, @Nullable UUID target) {
-        player.sendPluginMessage(bukkitPlugin, CommonData.getIDAsString(CommonData.playEmoteID), bytes);
+    public void sendMessage(CustomPacketPayload payload, @Nullable UUID target) {
+        BukkitUnwrapper.sendPayload(this.player, payload);
     }
 
     @Override
@@ -58,13 +48,13 @@ public class BukkitNetworkInstance extends AbstractNetworkInstance implements IS
         return true;
     }
 
-    @Override
-    public void presenceResponse() {
+    /* @Override
+    public void presenceResponse() { TODO
         IServerNetworkInstance.super.presenceResponse();
         for (Player player :bukkitPlugin.getServer().getOnlinePlayers()) {
             if (this.player.canSee(player)) {
                 ServerSideEmotePlay.getInstance().playerStartTracking(player, this.player);
             }
         }
-    }
+    }*/
 }
