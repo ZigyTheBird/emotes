@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.logging.Level;
 
-@Mod("emotecraft")
+@Mod(CommonData.MOD_ID)
 public class ForgeWrapper {
 
     public static final Logger logger = LoggerFactory.getLogger(CommonData.MOD_ID);

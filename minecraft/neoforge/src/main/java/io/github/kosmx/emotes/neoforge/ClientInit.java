@@ -5,6 +5,7 @@ import io.github.kosmx.emotes.arch.executor.ClientMethods;
 import io.github.kosmx.emotes.arch.network.client.ClientNetwork;
 import io.github.kosmx.emotes.arch.screen.EmoteMenu;
 import io.github.kosmx.emotes.arch.screen.ingame.FastMenuScreen;
+import io.github.kosmx.emotes.common.CommonData;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.main.MainClientInit;
 import io.github.kosmx.emotes.main.config.ClientConfig;
@@ -15,7 +16,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
@@ -27,7 +27,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Consumer;
 
-@EventBusSubscriber(Dist.CLIENT)
+@EventBusSubscriber(value = Dist.CLIENT, modid = CommonData.MOD_ID)
 public class ClientInit {
 
     static KeyMapping openMenuKey;
@@ -57,11 +57,6 @@ public class ClientInit {
     @SubscribeEvent
     public static void onDisconnect(ClientPlayerNetworkEvent.LoggingOut event) {
         ClientNetwork.INSTANCE.disconnect();
-    }
-
-    @SubscribeEvent
-    public static void onConnect(ClientPlayerNetworkEvent.LoggingIn event) {
-        ClientNetwork.INSTANCE.configureOnPlay(event.getConnection()::send);
     }
 
     public static void keyBindingRegister(RegisterKeyMappingsEvent event) {

@@ -2,9 +2,13 @@ package io.github.kosmx.emotes.neoforge.network;
 
 import io.github.kosmx.emotes.arch.network.*;
 import io.github.kosmx.emotes.arch.network.client.ClientNetwork;
-import io.github.kosmx.emotes.common.network.EmotePacket;
-import io.github.kosmx.emotes.common.network.EmoteStreamHelper;
-import io.github.kosmx.emotes.common.network.PacketTask;
+import io.github.kosmx.emotes.common.CommonData;
+import io.github.kosmx.emotes.common.network.GeyserEmotePacket;
+import io.github.kosmx.emotes.common.network.configuration.ConfigTask;
+import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
+import io.github.kosmx.emotes.common.network.payloads.EmoteFilePayload;
+import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
+import io.github.kosmx.emotes.common.network.payloads.EmoteStopPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -12,96 +16,50 @@ import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.DirectionalPayloadHandler;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.logging.Level;
 
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, modid = CommonData.MOD_ID)
 public class ForgeNetwork {
     @SubscribeEvent
     public static void registerPlay(final RegisterPayloadHandlersEvent event) {
-        event.registrar("emotecraft") // Play networking
-                .optional()
-                .playBidirectional(NetworkPlatformTools.EMOTE_CHANNEL_ID, EmotePacketPayload.EMOTE_CHANNEL_READER, new DirectionalPayloadHandler<>(
-                        (arg, playPayloadContext) -> ClientNetwork.INSTANCE.receiveMessage(arg.unwrapBytes()),
-                        (arg, playPayloadContext) -> CommonServerNetworkHandler.instance.receiveMessage(arg.unwrapBytes(), playPayloadContext.player())
-                ))
-
-                .optional()
-                .playBidirectional(NetworkPlatformTools.STREAM_CHANNEL_ID, EmotePacketPayload.STREAM_CHANNEL_READER, new DirectionalPayloadHandler<>(
-                        (arg, playPayloadContext) -> {
-                            try {
-                                ClientNetwork.INSTANCE.receiveStreamMessage(arg.bytes(), null);
-                            } catch (IOException e) {
-                                EmoteInstance.instance.getLogger().log(Level.WARNING, e.getMessage(), e);
-                            }
+        event.registrar(CommonData.MOD_ID).optional()
+                // Config
+                .configurationBidirectional(DiscoveryPayload.TYPE, DiscoveryPayload.STREAM_CODEC, new DirectionalPayloadHandler<>(
+                        (message, context) -> {
+                            ClientNetwork.INSTANCE.receiveMessage(message);
+                            ClientNetwork.INSTANCE.sendC2SConfig(context::reply);
                         },
-                        (arg, playPayloadContext) -> CommonServerNetworkHandler.instance.receiveStreamMessage(arg.unwrapBytes(), playPayloadContext.player())
-                ))
-
-                .optional()
-                .configurationBidirectional(NetworkPlatformTools.EMOTE_CHANNEL_ID, EmotePacketPayload.EMOTE_CHANNEL_READER, new DirectionalPayloadHandler<>(
-                        (arg, configurationPayloadContext) -> {
-                            try {
-                                ClientNetwork.INSTANCE.receiveConfigMessage(arg.bytes(), p -> configurationPayloadContext.listener().send(p));
-                            } catch (IOException e) {
-                                EmoteInstance.instance.getLogger().log(Level.WARNING, e.getMessage(), e);
-                            }
-                        },
-                        (arg, configurationPayloadContext) -> {
-                            try {
-                                var message = new EmotePacket.Builder().build().read(arg.bytes());
-                                if (message == null || message.purpose != PacketTask.CONFIG) {
-                                    throw new IOException("Wrong packet type for config task");
-                                }
-
-                                ((EmotesMixinConnection) configurationPayloadContext.connection()).emotecraft$setVersions(message.versions);
-
-                                CommonServerNetworkHandler.instance.getServerEmotes(message.versions).forEach(buffer -> new EmoteStreamHelper() {
-                                    @Override
-                                    protected int getMaxPacketSize() {
-                                        return Short.MAX_VALUE - 16;
-                                    }
-
-                                    @Override
-                                    protected void sendPlayPacket(ByteBuffer buffer) {
-                                        configurationPayloadContext.reply(EmotePacketPayload.playPacket(buffer));
-                                    }
-
-                                    @Override
-                                    protected void sendStreamChunk(ByteBuffer buffer) {
-                                        configurationPayloadContext.reply(EmotePacketPayload.streamPacket(buffer));
-                                    }
-                                });
-                                configurationPayloadContext.finishCurrentTask(ConfigTask.TYPE);
-                            } catch (IOException e) {
-                                EmoteInstance.instance.getLogger().log(Level.WARNING, e.getMessage(), e);
-                                configurationPayloadContext.channelHandlerContext().disconnect();
-                            }
+                        (message, context) -> {
+                            ((EmotesMixinConnection) context.connection()).emotecraft$setVersions(message.cloneVersions());
+                            // TODO send emotes
+                            context.finishCurrentTask(ConfigTask.TYPE); // And, we're done here
                         }
                 ))
+                .configurationToClient(EmoteFilePayload.TYPE, EmoteFilePayload.STREAM_CODEC,
+                        (message, context) -> ClientNetwork.INSTANCE.receiveMessage(message)
+                )
 
-                .optional()
-                .configurationToClient(NetworkPlatformTools.STREAM_CHANNEL_ID, EmotePacketPayload.STREAM_CHANNEL_READER, (arg, configurationPayloadContext) -> {
-                    try {
-                        ClientNetwork.INSTANCE.receiveStreamMessage(arg.bytes(), p -> configurationPayloadContext.listener().send(p));
-                    } catch (IOException e) {
-                        EmoteInstance.instance.getLogger().log(Level.WARNING, e.getMessage(), e);
-                    }
-                });
+                // Player
+                .playBidirectional(EmotePlayPayload.TYPE, EmotePlayPayload.STREAM_CODEC, new DirectionalPayloadHandler<>(
+                        (message, context) -> ClientNetwork.INSTANCE.receiveMessage(message),
+                        (message, context) -> CommonServerNetworkHandler.instance.receiveMessage(message, context.player())
+                ))
+                .playBidirectional(EmoteStopPayload.TYPE, EmoteStopPayload.STREAM_CODEC, new DirectionalPayloadHandler<>(
+                        (message, context) -> ClientNetwork.INSTANCE.receiveMessage(message),
+                        (message, context) -> CommonServerNetworkHandler.instance.receiveMessage(message, context.player())
+                ))
 
-        event.registrar("geyser")
-                .optional()
-                .playToServer(NetworkPlatformTools.GEYSER_CHANNEL_ID, EmotePacketPayload.GEYSER_CHANNEL_READER,
-                        (arg, playPayloadContext) -> CommonServerNetworkHandler.instance.receiveGeyserMessage(playPayloadContext.player(), arg.unwrapBytes())
+                // Bedrock
+                .playToServer(GeyserEmotePacket.TYPE, GeyserEmotePacket.STREAM_CODEC,
+                        (message, context) -> CommonServerNetworkHandler.instance.receiveBEEmote(context.player(), message)
                 );
+
+        // TODO stream
     }
 
     @SubscribeEvent
     public static void registerNetworkConfigTask(final RegisterConfigurationTasksEvent event) {
-        if (event.getListener().hasChannel(NetworkPlatformTools.EMOTE_CHANNEL_ID) ||
-                event.getListener().hasChannel(NetworkPlatformTools.STREAM_CHANNEL_ID)) {
-
+        if (event.getListener().hasChannel(DiscoveryPayload.TYPE)) {
             event.register(new ConfigTask());
         } else {
             EmoteInstance.instance.getLogger().log(Level.FINE, "Client doesn't support emotes, ignoring");
