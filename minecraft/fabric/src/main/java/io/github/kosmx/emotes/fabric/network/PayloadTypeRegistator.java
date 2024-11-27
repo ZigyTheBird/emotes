@@ -1,24 +1,31 @@
 package io.github.kosmx.emotes.fabric.network;
 
-import io.github.kosmx.emotes.arch.network.EmotePacketPayload;
-import io.github.kosmx.emotes.arch.network.NetworkPlatformTools;
+import io.github.kosmx.emotes.common.network.GeyserEmotePacket;
+import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
+import io.github.kosmx.emotes.common.network.payloads.EmoteFilePayload;
+import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
+import io.github.kosmx.emotes.common.network.payloads.EmoteStopPayload;
+import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public class PayloadTypeRegistator {
     public static void init() {
-        register(NetworkPlatformTools.EMOTE_CHANNEL_ID, EmotePacketPayload.EMOTE_CHANNEL_READER);
-        register(NetworkPlatformTools.STREAM_CHANNEL_ID, EmotePacketPayload.STREAM_CHANNEL_READER);
-        register(NetworkPlatformTools.GEYSER_CHANNEL_ID, EmotePacketPayload.GEYSER_CHANNEL_READER);
-    }
+        // Config
+        PayloadTypeRegistry.configurationS2C().register(EmoteFilePayload.TYPE, EmoteFilePayload.STREAM_CODEC);
+        PayloadTypeRegistry.configurationS2C().register(DiscoveryPayload.TYPE, DiscoveryPayload.STREAM_CODEC);
+        PayloadTypeRegistry.configurationC2S().register(DiscoveryPayload.TYPE, DiscoveryPayload.STREAM_CODEC);
 
-    private static void register(CustomPacketPayload.Type<EmotePacketPayload> type, StreamCodec<FriendlyByteBuf, EmotePacketPayload> codec) {
-        PayloadTypeRegistry.configurationS2C().register(type, codec);
-        PayloadTypeRegistry.configurationC2S().register(type, codec);
+        // Player
+        PayloadTypeRegistry.playS2C().register(EmotePlayPayload.TYPE, EmotePlayPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(EmotePlayPayload.TYPE, EmotePlayPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(EmoteStopPayload.TYPE, EmoteStopPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(EmoteStopPayload.TYPE, EmoteStopPayload.STREAM_CODEC);
 
-        PayloadTypeRegistry.playS2C().register(type, codec);
-        PayloadTypeRegistry.playC2S().register(type, codec);
+        // Bedrock
+        PayloadTypeRegistry.playC2S().register(GeyserEmotePacket.TYPE, GeyserEmotePacket.STREAM_CODEC);
+
+        // Stream
+        PayloadTypeRegistry.playS2C().register(StreamPayload.TYPE, StreamPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(StreamPayload.TYPE, StreamPayload.STREAM_CODEC);
     }
 }
