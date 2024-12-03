@@ -33,11 +33,7 @@ public abstract class AbstractServerNetwork implements INetworkInstance {
 
     @Override
     public EmoteStreamHelper getStreamHelper() {
-        if (maxDataSize() <= 0) {
-            return null;
-        }
-
-        if (this.emoteStreamHelper == null) {
+        if (allowStream() && this.emoteStreamHelper == null) {
             this.emoteStreamHelper = new EmoteStreamHelper(maxDataSize());
         }
 

@@ -40,7 +40,7 @@ public final class ClientPacketManager extends EmotesProxyManager {
             for(INetworkInstance network:networkInstances){
                 if(network.isActive()){
                     if (target == null || !network.isServerTrackingPlayState()) {
-                        if (!defaultNetwork.getRemoteVersions().sendPlayerID() && payload instanceof HasPlayerPayload<?> playerPayload) {
+                        if (!defaultNetwork.sendPlayerID() && payload instanceof HasPlayerPayload<?> playerPayload) {
                             defaultNetwork.sendMessage(playerPayload.removePlayerID(), target);
 
                         } else {
@@ -51,7 +51,7 @@ public final class ClientPacketManager extends EmotesProxyManager {
             }
         }
         if(defaultNetwork.isActive() && (target == null || !defaultNetwork.isServerTrackingPlayState())){
-            if (!defaultNetwork.getRemoteVersions().sendPlayerID() && payload instanceof HasPlayerPayload<?> playerPayload) {
+            if (!defaultNetwork.sendPlayerID() && payload instanceof HasPlayerPayload<?> playerPayload) {
                 defaultNetwork.sendMessage(playerPayload.removePlayerID(), target);
 
             } else {

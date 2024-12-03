@@ -13,13 +13,15 @@ public class ConfigTask implements ConfigurationTask {
     public static final Type TYPE = new Type("emotes:config");
 
     private final boolean doesServerTrackEmotePlay;
+    private final int maxDataSize;
 
-    public ConfigTask(boolean doesServerTrackEmotePlay) {
+    public ConfigTask(boolean doesServerTrackEmotePlay, int maxDataSize) {
         this.doesServerTrackEmotePlay = doesServerTrackEmotePlay;
+        this.maxDataSize = maxDataSize;
     }
 
-    public ConfigTask() {
-        this(true);
+    public ConfigTask(int maxDataSize) {
+        this(true, maxDataSize);
     }
 
     @Override
@@ -28,10 +30,8 @@ public class ConfigTask implements ConfigurationTask {
                 AnimationBinary.getCurrentVersion(), // Animator version
                 false, // send player uuid?
                 this.doesServerTrackEmotePlay,  // track player state
-
-                false, // disable NBS?
                 true, // Aloow emote sync?
-                Short.MAX_VALUE
+                this.maxDataSize
         )));
     }
 

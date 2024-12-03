@@ -25,7 +25,7 @@ public final class ServerNetworkStuff {
         // Config networking
         ServerConfigurationConnectionEvents.CONFIGURE.register((handler, server) -> {
             if (ServerConfigurationNetworking.canSend(handler, DiscoveryPayload.TYPE)) {
-                handler.addTask(new ConfigTask());
+                handler.addTask(new ConfigTask(Short.MAX_VALUE));
             } else {
                 EmoteInstance.instance.getLogger().log(Level.FINE, "Client doesn't support emotes, ignoring");
             }

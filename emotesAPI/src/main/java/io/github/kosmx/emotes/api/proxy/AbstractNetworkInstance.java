@@ -1,5 +1,6 @@
 package io.github.kosmx.emotes.api.proxy;
 
+import dev.kosmx.playerAnim.core.data.AnimationBinary;
 import io.github.kosmx.emotes.common.network.EmoteStreamHelper;
 import io.github.kosmx.emotes.common.network.payloads.DiscoveryPayload;
 import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
@@ -96,16 +97,18 @@ public abstract class AbstractNetworkInstance implements INetworkInstance{
 
     @Override
     public void sendC2SConfig(Consumer<CustomPacketPayload> consumer) {
-        consumer.accept(this.discoveryPayload); // TODO override settings
+        consumer.accept(new DiscoveryPayload(
+                AnimationBinary.getCurrentVersion(),
+                sendPlayerID(),
+                isServerTrackingPlayState(),
+                this.discoveryPayload.allowSync(),
+                maxDataSize()
+        ));
     }
 
     @Override
     public EmoteStreamHelper getStreamHelper() {
-        if (maxDataSize() <= 0) {
-            return null;
-        }
-
-        if (this.emoteStreamHelper == null) {
+        if (allowStream() && this.emoteStreamHelper == null) {
             this.emoteStreamHelper = new EmoteStreamHelper(maxDataSize());
         }
 

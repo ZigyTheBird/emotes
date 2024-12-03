@@ -68,7 +68,7 @@ public class ForgeNetwork {
     @SubscribeEvent
     public static void registerNetworkConfigTask(final RegisterConfigurationTasksEvent event) {
         if (event.getListener().hasChannel(DiscoveryPayload.TYPE)) {
-            event.register(new ConfigTask());
+            event.register(new ConfigTask(Short.MAX_VALUE));
         } else {
             EmoteInstance.instance.getLogger().log(Level.FINE, "Client doesn't support emotes, ignoring");
         }

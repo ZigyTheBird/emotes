@@ -66,7 +66,7 @@ public record EmotePlayPayload(KeyframeAnimation emoteData, int tick, Optional<U
     }
 
     public boolean valid() {
-        return true; // TODO
+        return (boolean) emoteData().extraData.getOrDefault("valid", false);
     }
 
     @Override

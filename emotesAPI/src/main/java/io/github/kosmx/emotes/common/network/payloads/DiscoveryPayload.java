@@ -12,8 +12,8 @@ import org.jetbrains.annotations.NotNull;
  * The client and server exchange this packet to synchronize each other's versions
  * @param animationFormat Animator's version {@link AnimationBinary#getCurrentVersion()}
  */
-public record DiscoveryPayload(int animationFormat, boolean sendPlayerID, boolean doesServerTrackEmotePlay, boolean disableNBS, boolean allowSync, int maxDataSize) implements CustomPacketPayload {
-    public static final DiscoveryPayload DEFAULT = new DiscoveryPayload(AnimationBinary.getCurrentVersion(), false, true, false, true, 0);
+public record DiscoveryPayload(int animationFormat, boolean sendPlayerID, boolean doesServerTrackEmotePlay, boolean allowSync, int maxDataSize) implements CustomPacketPayload {
+    public static final DiscoveryPayload DEFAULT = new DiscoveryPayload(AnimationBinary.getCurrentVersion(), false, true, false, Short.MAX_VALUE);
 
     public static final CustomPacketPayload.Type<DiscoveryPayload> TYPE =
             new CustomPacketPayload.Type<>(CommonData.newIdentifier("discovery"));
@@ -22,7 +22,6 @@ public record DiscoveryPayload(int animationFormat, boolean sendPlayerID, boolea
             ByteBufCodecs.INT, DiscoveryPayload::animationFormat,
             ByteBufCodecs.BOOL, DiscoveryPayload::sendPlayerID,
             ByteBufCodecs.BOOL, DiscoveryPayload::doesServerTrackEmotePlay,
-            ByteBufCodecs.BOOL, DiscoveryPayload::disableNBS,
             ByteBufCodecs.BOOL, DiscoveryPayload::allowSync,
             ByteBufCodecs.INT, DiscoveryPayload::maxDataSize,
             DiscoveryPayload::new
@@ -35,7 +34,7 @@ public record DiscoveryPayload(int animationFormat, boolean sendPlayerID, boolea
 
     @Override
     public String toString() {
-        return String.format("DiscoveryPayload{animationFormat=%s, doesServerTrackEmotePlay=%s, disableNBS=%s}", animationFormat(), doesServerTrackEmotePlay(), disableNBS());
+        return String.format("DiscoveryPayload{animationFormat=%s, sendPlayerID=%s, doesServerTrackEmotePlay=%s, allowSync=%s, maxDataSize=%s}", animationFormat(), sendPlayerID(), doesServerTrackEmotePlay(), allowSync(), maxDataSize());
     }
 
     public boolean allowStream() {

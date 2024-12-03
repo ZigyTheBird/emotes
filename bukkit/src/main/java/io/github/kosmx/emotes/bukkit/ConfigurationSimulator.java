@@ -78,7 +78,7 @@ public class ConfigurationSimulator implements Listener {
         Queue<ConfigurationTask> configurationTasks = (Queue<ConfigurationTask>)
                 CONFIGURATION_TASKS.get(configurationListener);
 
-        configurationTasks.add(new ConfigTask() {
+        configurationTasks.add(new ConfigTask(Short.MAX_VALUE - (Short.MAX_VALUE / 6)) {
             @Override
             public void start(@NotNull Consumer<Packet<?>> consumer) {
                 super.start(packet -> consumer.accept(BukkitUnwrapper.wrapPayload(packet)));
