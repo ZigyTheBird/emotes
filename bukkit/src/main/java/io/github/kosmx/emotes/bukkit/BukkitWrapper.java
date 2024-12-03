@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import io.github.kosmx.emotes.bukkit.executor.BukkitInstance;
 import io.github.kosmx.emotes.bukkit.network.BukkitNetworkInstance;
 import io.github.kosmx.emotes.bukkit.network.ServerSideEmotePlay;
+import io.github.kosmx.emotes.bukkit.utils.BukkitUnwrapper;
 import io.github.kosmx.emotes.common.CommonData;
 import io.github.kosmx.emotes.common.network.GeyserEmotePacket;
 import io.github.kosmx.emotes.common.network.configuration.ConfigTask;
@@ -23,6 +24,7 @@ import net.kyori.adventure.text.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -116,13 +118,9 @@ public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
                 return;
             }
 
-            if (ConfigurationSimulator.CONFIGURATION_MAP.containsKey(player)) { // In configuration phase
-                this.networkPlay.player_database.put(player.getUniqueId(), new BukkitNetworkInstance(player));
-                // TODO send emotes
-                ConfigurationSimulator.finishCurrentTask(player, ConfigTask.TYPE);
-            }
-
-            BukkitNetworkInstance networkInstance = this.networkPlay.getPlayerNetworkInstance(player);
+            BukkitNetworkInstance networkInstance = this.networkPlay.player_database.computeIfAbsent(player.getUniqueId(),
+                    key -> new BukkitNetworkInstance(player)
+            );
 
             CustomPacketPayload payload = codec.decode(Unpooled.wrappedBuffer(bytes));
             if (payload instanceof StreamPayload streamPayload) {
@@ -131,6 +129,16 @@ public class BukkitWrapper extends JavaPlugin implements PluginMessageListener {
             }
 
             this.networkPlay.receiveMessage(Objects.requireNonNull(payload), player, networkInstance);
+
+            if (ConfigurationSimulator.CONFIGURATION_MAP.containsKey(player)) { // In configuration phase
+                if (networkInstance.getRemoteVersions().allowSync()) {
+                    ServerConfigurationPacketListenerImpl listener = ConfigurationSimulator.CONFIGURATION_MAP.get(player);
+                    UniversalEmoteSerializer.wrapServerEmotes()
+                            .map(BukkitUnwrapper::wrapPayload)
+                            .forEach(listener::send);
+                }
+                ConfigurationSimulator.finishCurrentTask(player, ConfigTask.TYPE);
+            }
         } catch (Exception e) {
             EmoteInstance.instance.getLogger().log(Level.WARNING, "Failed to handle message!", e);
             player.kick(Component.text("Failed to handle packet '" + type + "'"));

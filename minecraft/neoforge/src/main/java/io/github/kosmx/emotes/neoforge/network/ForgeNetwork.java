@@ -11,6 +11,7 @@ import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteStopPayload;
 import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
+import io.github.kosmx.emotes.server.serializer.UniversalEmoteSerializer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent;
@@ -32,7 +33,9 @@ public class ForgeNetwork {
                         },
                         (message, context) -> {
                             ((EmotesMixinConnection) context.connection()).emotecraft$setVersions(message);
-                            // TODO send emotes
+                            if (message.allowSync()) {
+                                UniversalEmoteSerializer.wrapServerEmotes().forEach(context.listener()::send);
+                            }
                             context.finishCurrentTask(ConfigTask.TYPE); // And, we're done here
                         }
                 ))

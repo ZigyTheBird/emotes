@@ -6,8 +6,11 @@ import dev.kosmx.playerAnim.core.data.KeyframeAnimation;
 import dev.kosmx.playerAnim.core.util.MathHelper;
 import dev.kosmx.playerAnim.core.util.UUIDMap;
 import io.github.kosmx.emotes.common.CommonData;
+import io.github.kosmx.emotes.common.network.payloads.EmoteFilePayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
 import io.github.kosmx.emotes.server.serializer.type.*;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -19,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
+import java.util.stream.Stream;
 
 public class UniversalEmoteSerializer {
     public static List<IReader> readers = Arrays.asList(new JsonEmoteWrapper(), new QuarkReaderWrapper(), new BinaryFormat());
@@ -132,6 +136,10 @@ public class UniversalEmoteSerializer {
         return hiddenServerEmotes.get(uuid);
     }
 
-
-
+    public static Stream<Packet<?>> wrapServerEmotes() {
+        return UniversalEmoteSerializer.serverEmotes.values()
+                .stream()
+                .map(EmoteFilePayload::new)
+                .map(ClientboundCustomPayloadPacket::new);
+    }
 }

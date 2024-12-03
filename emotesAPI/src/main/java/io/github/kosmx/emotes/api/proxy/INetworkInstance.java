@@ -48,7 +48,7 @@ public interface INetworkInstance {
      * Does this server allow emote streams from client. This can allow larger/longer emotes but can be abused
      * @return is emote streamin allowed
      */
-    default boolean allowEmoteStreamC2S() {
+    default boolean allowStream() {
         return getRemoteVersions().allowStream();
     }
 

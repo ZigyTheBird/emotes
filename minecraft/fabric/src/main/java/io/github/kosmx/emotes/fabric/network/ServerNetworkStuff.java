@@ -9,6 +9,7 @@ import io.github.kosmx.emotes.common.network.payloads.EmotePlayPayload;
 import io.github.kosmx.emotes.common.network.payloads.EmoteStopPayload;
 import io.github.kosmx.emotes.common.network.payloads.StreamPayload;
 import io.github.kosmx.emotes.executor.EmoteInstance;
+import io.github.kosmx.emotes.server.serializer.UniversalEmoteSerializer;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -33,7 +34,9 @@ public final class ServerNetworkStuff {
         ServerConfigurationNetworking.registerGlobalReceiver(DiscoveryPayload.TYPE, (message, context) -> {
             Connection connection = ((ServerCommonPacketListenerAccessor) context.networkHandler()).getConnection();
             ((EmotesMixinConnection) connection).emotecraft$setVersions(message);
-            // TODO send emotes
+            if (message.allowSync()) {
+                UniversalEmoteSerializer.wrapServerEmotes().forEach(context.responseSender()::sendPacket);
+            }
             context.networkHandler().completeTask(ConfigTask.TYPE); // And, we're done here
         });
 
