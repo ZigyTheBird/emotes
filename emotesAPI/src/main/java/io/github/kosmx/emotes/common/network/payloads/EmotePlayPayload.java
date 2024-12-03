@@ -2,6 +2,7 @@ package io.github.kosmx.emotes.common.network.payloads;
 
 import dev.kosmx.playerAnim.core.data.KeyframeAnimation;
 import io.github.kosmx.emotes.common.CommonData;
+import io.github.kosmx.emotes.common.network.payloads.type.EmoteDataPayload;
 import io.github.kosmx.emotes.common.network.payloads.type.HasPlayerPayload;
 import io.github.kosmx.emotes.common.network.utils.KeyframeAnimationUtils;
 import io.netty.buffer.ByteBuf;
@@ -22,7 +23,7 @@ import java.util.UUID;
  * @param tick A tick to start with
  * @param playerId Player who plays the animation (empty if sent from the client)
  */
-public record EmotePlayPayload(KeyframeAnimation emoteData, int tick, Optional<UUID> playerId, boolean isForced) implements CustomPacketPayload, HasPlayerPayload<EmotePlayPayload> {
+public record EmotePlayPayload(KeyframeAnimation emoteData, int tick, Optional<UUID> playerId, boolean isForced) implements CustomPacketPayload, HasPlayerPayload<EmotePlayPayload>, EmoteDataPayload {
     public static final CustomPacketPayload.Type<EmotePlayPayload> TYPE =
             new CustomPacketPayload.Type<>(CommonData.newIdentifier("play"));
 
