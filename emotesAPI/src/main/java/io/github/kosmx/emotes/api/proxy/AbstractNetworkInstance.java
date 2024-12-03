@@ -64,6 +64,7 @@ public abstract class AbstractNetworkInstance implements INetworkInstance{
             this.emoteStreamHelper.close();
             this.emoteStreamHelper = null;
         }
+        setVersions(DiscoveryPayload.DEFAULT);
     }
 
     /**
