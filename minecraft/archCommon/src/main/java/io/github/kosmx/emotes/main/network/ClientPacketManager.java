@@ -18,7 +18,6 @@ import java.util.logging.Level;
  * Responsible for calling proxy instances and other stuff
  */
 public final class ClientPacketManager extends EmotesProxyManager {
-
     private static final INetworkInstance defaultNetwork = PlatformTools.getClientNetworkController();
     //that casting should always work
 

@@ -12,16 +12,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 public final class PlatformTools {
-
-    @ExpectPlatform
-    public static boolean isPlayerAnimLoaded() {
-        throw new AssertionError();
-    }
-
     public static INetworkInstance getClientNetworkController() {
         return ClientNetwork.INSTANCE;
     }
-
 
     public static @Nullable IEmotePlayerEntity getPlayerFromUUID(UUID uuid) {
         if (Minecraft.getInstance().level == null) return null;
