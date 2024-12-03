@@ -158,7 +158,7 @@ if (keysExists) {
 
         gameVersions = ["1.21.1"]
         changelog = changes
-        loaders = ["bukkit", "folia", "paper", "purpur", "spigot"]
+        loaders = ["folia", "paper", "purpur"]
         failSilently = false
     }
 }
