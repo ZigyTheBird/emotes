@@ -13,7 +13,7 @@ Keep in mind that the visual for bending is incorrect in Blender/Blockbench, the
 > [!CAUTION]  
 >  BENDING ON THE Z AXIS IS NOT SUPPORTED!!!  
 >  And by Z axis I mean the one facing forward, I need to specify this since Blender uses a different coordinate system than MC.  
->  Make sure your Z rotation value is always set to 0 in Blockbench and the same for you Y rotation value in Blender!  
+>  Make sure every bone's Z rotation value is always set to 0 in Blockbench and the same for Y rotation values in Blender!  
 
 ### If you don't like these
 You can create your own program or edit the file by hand   
