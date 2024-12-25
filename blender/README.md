@@ -7,7 +7,8 @@ To use these, use the 2.83 LTS, or the latest version of Blender.
 `.bbmodel` files are models for [Blockbench](https://blockbench.net/) You can use them as well.  
 To use them, you'll need to install [GeckoLib](https://geckolib.com/) plugin first.   
 
-Models labled with `_bend` allow you to bend some bones and those labled with `_item` allow you to animate currently held items.  
+Models labled with `_bend` allow you to bend some bones, those labled with `_item` allow you to animate currently held items and "_cape" + "_scale" should be self explanatory.  
+All Blockbench models support scaling.  
 Keep in mind that the visual for bending is incorrect in Blender/Blockbench, there won't be any gaps created by bending a bone in-game.  
 
 > [!CAUTION]  
