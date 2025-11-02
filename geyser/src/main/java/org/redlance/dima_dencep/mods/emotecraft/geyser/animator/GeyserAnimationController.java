@@ -2,6 +2,7 @@ package org.redlance.dima_dencep.mods.emotecraft.geyser.animator;
 
 import com.zigythebird.playeranimcore.animation.AnimationController;
 import com.zigythebird.playeranimcore.animation.AnimationData;
+import com.zigythebird.playeranimcore.bones.PivotBone;
 import com.zigythebird.playeranimcore.bones.PlayerAnimBone;
 import com.zigythebird.playeranimcore.enums.Axis;
 import com.zigythebird.playeranimcore.enums.PlayState;
@@ -37,7 +38,7 @@ public class GeyserAnimationController extends AnimationController implements Ru
             "right_leg", new Vec3f(2f, 12, 0f),
             "torso", new Vec3f(0, 24, 0),
             "head", new Vec3f(0, 24, 0),
-            "body", new Vec3f(0, 12, 0),
+            "body", new Vec3f(0, 0, 0),
             "cape", new Vec3f(0, 24, 2),
             "elytra", new Vec3f(0, 24, 2)
     );
@@ -78,6 +79,20 @@ public class GeyserAnimationController extends AnimationController implements Ru
     }
 
     @Override
+    protected void applyCustomPivotPoints() {
+        if (this.pivotBones.containsKey("negated_torso_for_bedrock")) {
+            PivotBone bone = this.pivotBones.get("negated_torso_for_bedrock");
+            bone.copyOtherBone(this.bones.get("torso"));
+            bone.mulPos(-1);
+            bone.mulRot(-1);
+            bone.setScaleX(1/bone.getScaleX());
+            bone.setScaleY(1/bone.getScaleY());
+            bone.setScaleZ(1/bone.getScaleZ());
+        }
+        super.applyCustomPivotPoints();
+    }
+
+    @Override
     public void run() {
         // Check propertyManager
         GeyserEntityPropertyManager propertyManager = this.playerEntity.getPropertyManager();
@@ -108,13 +123,10 @@ public class GeyserAnimationController extends AnimationController implements Ru
     public PlayerAnimBone get3DTransform(@NonNull PlayerAnimBone bone) {
         bone = super.get3DTransform(bone);
 
-        String boneName = bone.getName();
-        if ("left_arm".equals(boneName) || "right_arm".equals(boneName) || "head".equals(boneName)) {
-            bone.applyOtherBone(get3DTransform(new PlayerAnimBone("torso")).scale(-1));
-
-        } else if ("cape".equals(boneName)) {
+        if ("cape".equals(bone.getName())) {
             bone.rotX *= -1;
         }
+
         return bone;
     }
 

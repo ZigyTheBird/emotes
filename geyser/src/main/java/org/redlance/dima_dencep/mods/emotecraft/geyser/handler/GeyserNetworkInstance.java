@@ -19,6 +19,7 @@ import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.Serverbound
 import org.jetbrains.annotations.Nullable;
 import org.redlance.dima_dencep.mods.emotecraft.geyser.EmotecraftExt;
 import org.redlance.dima_dencep.mods.emotecraft.geyser.animator.GeyserAnimationController;
+import org.redlance.dima_dencep.mods.emotecraft.geyser.utils.AnimationUtils;
 import org.redlance.dima_dencep.mods.emotecraft.geyser.utils.EmotecraftLocale;
 import org.redlance.dima_dencep.mods.emotecraft.geyser.utils.FormUtils;
 
@@ -100,6 +101,8 @@ public class GeyserNetworkInstance extends AbstractNetworkInstance {
             case STREAM:
                 assert data.emoteData != null;
                 PlayerEntity playerEntity = getPlayerFromUUID(data.player);
+
+                data.emoteData = AnimationUtils.javaToGeyserAnimation(data.emoteData);
 
                 EventResult result = ClientEmoteEvents.EMOTE_VERIFICATION.invoker().verify(data.emoteData, data.player);
                 if (result == EventResult.FAIL) break;
