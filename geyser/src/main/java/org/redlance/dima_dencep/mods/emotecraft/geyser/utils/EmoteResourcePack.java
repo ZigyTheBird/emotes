@@ -91,10 +91,7 @@ public final class EmoteResourcePack extends PackCodec implements EventRegistrar
                     TransformType.SCALE, k -> new EnumMap<>(Axis.class)
             )));
 
-            String bedrockBone = UniversalAnimLoader.restorePlayerBoneName(boneName);
-            if ("body".equals(bedrockBone)) bedrockBone = "root";
-            if ("torso".equals(bedrockBone)) bedrockBone = "body";
-            bones.add(bedrockBone, bone);
+            bones.add(UniversalAnimLoader.restorePlayerBoneName(boneName), bone);
         }
 
         JsonObject animation = new JsonObject();

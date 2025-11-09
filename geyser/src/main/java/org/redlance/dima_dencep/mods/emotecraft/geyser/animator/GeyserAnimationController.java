@@ -14,14 +14,20 @@ import org.cloudburstmc.protocol.bedrock.data.entity.EntityProperty;
 import org.cloudburstmc.protocol.bedrock.packet.SetEntityDataPacket;
 import org.geysermc.geyser.api.entity.property.GeyserEntityProperty;
 import org.geysermc.geyser.api.entity.property.type.GeyserIntEntityProperty;
+import org.geysermc.geyser.api.skin.SkinData;
+import org.geysermc.geyser.api.skin.SkinGeometry;
 import org.geysermc.geyser.api.util.Identifier;
 import org.geysermc.geyser.entity.properties.GeyserEntityPropertyManager;
 import org.geysermc.geyser.entity.properties.type.PropertyType;
 import org.geysermc.geyser.entity.type.player.PlayerEntity;
+import org.geysermc.geyser.skin.ProvidedSkins;
+import org.geysermc.geyser.skin.SkinManager;
+import org.geysermc.geyser.util.FileUtils;
 import org.redlance.dima_dencep.mods.emotecraft.geyser.EmotecraftExt;
 import org.redlance.dima_dencep.mods.emotecraft.geyser.utils.BedrockPacketsUtils;
 import org.redlance.dima_dencep.mods.emotecraft.geyser.utils.EmoteResourcePack;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 
@@ -29,6 +35,9 @@ import java.util.*;
  * Bends in the bedrock are not supported, so this feature is not implemented here.
  */
 public class GeyserAnimationController extends AnimationController implements Runnable {
+    public static final String GEOMETRY = new String(FileUtils.readAllBytes("emotecraft.json"), StandardCharsets.UTF_8);
+    public static final String GEOMETRY_SLIM = new String(FileUtils.readAllBytes("emotecraft_slim.json"), StandardCharsets.UTF_8);
+
     // Bone pivot point positions used to apply custom pivot point translations.
     public static final Map<String, Vec3f> BONE_POSITIONS = Map.of(
             "right_arm", new Vec3f(5, 22, 0),
@@ -70,6 +79,11 @@ public class GeyserAnimationController extends AnimationController implements Ru
     @Override
     protected void setupNewAnimation() {
         super.setupNewAnimation();
+        SkinManager.requestAndHandleSkinAndCape(playerEntity, playerEntity.getSession(), skinAndCape -> {
+            SkinManager.GameProfileData profileData = SkinManager.GameProfileData.from(playerEntity);
+            boolean isSlim = profileData == null ? ProvidedSkins.getDefaultPlayerSkin(playerEntity.getUuid()).isSlim() : profileData.isAlex();
+            SkinManager.sendSkinPacket(playerEntity.getSession(), playerEntity, new SkinData(skinAndCape.skin(), skinAndCape.cape(), new SkinGeometry("{\"geometry\" :{\"default\" :\"geometry.humanoid.emotecraft" + (isSlim ? "Slim" : "") + "\"}}", isSlim ? GEOMETRY_SLIM : GEOMETRY)));
+        });
         BedrockPacketsUtils.sendInstantAnimation(EmoteResourcePack.ANIMATION_NAME, this.playerEntity);
         for (String partKey : this.dirtyBones) {
             updateBone(this.playerEntity.getPropertyManager(), partKey, new PlayerAnimBone(partKey));
@@ -108,11 +122,7 @@ public class GeyserAnimationController extends AnimationController implements Ru
     public PlayerAnimBone get3DTransform(@NonNull PlayerAnimBone bone) {
         bone = super.get3DTransform(bone);
 
-        String boneName = bone.getName();
-        if ("left_arm".equals(boneName) || "right_arm".equals(boneName) || "head".equals(boneName)) {
-            bone.applyOtherBone(get3DTransform(new PlayerAnimBone("torso")).scale(-1));
-
-        } else if ("cape".equals(boneName)) {
+        if ("cape".equals(bone.getName())) {
             bone.rotX *= -1;
         }
         return bone;
